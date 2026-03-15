@@ -16,14 +16,25 @@
 
 ---
 
-## Quick Start
+### 1. Database Setup (Choose ONE path)
 
-### 1. Database Setup (MySQL Workbench)
+#### Path A: Full Migration (Recommended for your new laptop)
+Use this if you want everything exactly as it is now (Schema + All 2025/2026 Data + Stored Procedures).
 ```sql
--- Run in order:
+source database/hyundai_dms_full_migration.sql
+```
+
+#### Path B: Fresh Development Start
+Use this for a clean setup with basic sample records.
+```sql
 source database/schema.sql
 source database/sample_data.sql
 ```
+
+#### Optional: Additional History
+If you chose Path B and want to add the extra realistic data manually:
+- `source database/2025_historical_data.sql` (184 sales for 2025 reports)
+- `source database/realistic_2026_data.sql` (Detailed 2026 sales overhaul)
 
 ### 2. Backend
 ```bash
