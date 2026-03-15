@@ -46,5 +46,5 @@ build/
 tmp/
 temp/
 
-# Compiled SQL
-database/hyundai_dms_full_migration.sql
+# Compiled SQL (Allowing full migration for sync)
+# database/hyundai_dms_full_migration.sql
