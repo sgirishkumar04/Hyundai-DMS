@@ -150,6 +150,46 @@ Service: Appointment → Job Card → Mechanic Assigned → Parts Used → Servi
 
 ---
 
+## Windows Setup Guide (Step-by-Step)
+
+If you are setting this up on a Windows machine, follow these precise steps:
+
+### 1. Install Prerequisites
+- **Git**: Download and install [Git for Windows](https://git-scm.com/download/win).
+- **Java 17**: Install [OpenJDK 17](https://adoptium.net/temurin/releases/?version=17) (MSI installer is easiest). Ensure `JAVA_HOME` is set in Environment Variables.
+- **MySQL**: Install [MySQL Community Server 8.0](https://dev.mysql.com/downloads/installer/). During setup, remember your **root password**.
+- **Node.js**: Install the latest [LTS version (v18 or v20)](https://nodejs.org/).
+
+### 2. Prepare Database
+1. Open **MySQL Workbench**.
+2. Connect to your local instance.
+3. Open `database/schema.sql` and click the **Lightning Bolt** (Execute) icon.
+4. Open `database/sample_data.sql` and execute it to populate the data.
+
+### 3. Configure & Run Backend
+1. Open a terminal (PowerShell or Command Prompt) in the `backend` folder.
+2. Open `src/main/resources/application.properties`.
+3. Update `spring.datasource.password` with the password you set during MySQL installation.
+4. Run the application:
+   ```cmd
+   mvnw.cmd spring-boot:run
+   ```
+   *(The app is ready when you see "Started DmsApplication" in the logs)*
+
+### 4. Run Frontend
+1. Open a **new** terminal in the `frontend` folder.
+2. Install dependencies:
+   ```cmd
+   npm install
+   ```
+3. Start the dev server:
+   ```cmd
+   npm start
+   ```
+4. Open your browser to `http://localhost:4200`.
+
+---
+
 ## Extending the System
 
 The **Sales, Parts, and Finance** modules are scaffolded as stubs. To add full CRUD to any stub:
