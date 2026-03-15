@@ -47,6 +47,7 @@ public class Lead {
     @JoinColumn(name = "preferred_color_id")
     private Color preferredColor;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private LeadStatus status = LeadStatus.NEW;
@@ -57,9 +58,11 @@ public class Lead {
     @Column(name = "expected_close_date")
     private LocalDate expectedCloseDate;
 
+    @Builder.Default
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-
+    
+    @Builder.Default
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 

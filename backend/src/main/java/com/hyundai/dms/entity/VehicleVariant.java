@@ -33,15 +33,18 @@ public class VehicleVariant {
     @Column(length = 30)
     private String transmission;
 
+    @Builder.Default
     @Column(name = "seating_capacity")
     private Integer seatingCapacity = 5;
 
     @Column(name = "ex_showroom_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal exShowroomPrice;
 
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Builder.Default
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
