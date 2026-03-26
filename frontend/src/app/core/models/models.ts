@@ -53,6 +53,7 @@ export interface ServiceAppointment {
 export interface SparePart {
   id: number; partNumber: string; name: string; category: string;
   unit: string; unitPrice: number; gstRate: number; supplier: Supplier;
+  isActive: boolean;
 }
 export interface Supplier { id: number; name: string; phone: string; email: string; }
 export interface Bank { id: number; name: string; }
@@ -63,7 +64,7 @@ export interface FinanceLoan {
   emiAmount: number; status: string;
 }
 
-export interface AuthResponse { token: string; email: string; role: string; fullName: string; employeeId: number; }
+export interface AuthResponse { token: string; email: string; role: string; fullName: string; employeeId: number; dealerId?: number; isSuperAdmin?: boolean; permissions?: string[]; }
 
 export interface Page<T> {
   content: T[];

@@ -11,7 +11,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Table(name = "customers",
     indexes = {
         @Index(columnList = "phone"),
-        @Index(columnList = "email")
+        @Index(columnList = "email"),
+        @Index(columnList = "dealer_id")
     })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -49,6 +50,10 @@ public class Customer {
 
     @Column(name = "aadhaar_number", length = 12)
     private String aadhaarNumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dealer_id")
+    private Dealer dealer;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

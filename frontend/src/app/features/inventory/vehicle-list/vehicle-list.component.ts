@@ -8,6 +8,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { VehicleDetailsDialogComponent } from '../vehicle-details-dialog/vehicle-details-dialog.component';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-vehicle-list',
@@ -20,6 +21,7 @@ import { Router } from '@angular/router';
           <p>Manage your dealership vehicle stock</p>
         </div>
         <button mat-raised-button style="background:var(--hd-blue);color:#fff"
+                *ngIf="canCreate"
                 (click)="router.navigate(['/inventory/new'])">
           <mat-icon>add</mat-icon> Add Vehicle
         </button>
@@ -167,10 +169,10 @@ import { Router } from '@angular/router';
             <th mat-header-cell *matHeaderCellDef style="text-align:center">Actions</th>
             <td mat-cell *matCellDef="let v">
               <div class="action-btns">
-                <button mat-icon-button matTooltip="Edit" (click)="router.navigate(['/inventory', v.id, 'edit']); $event.stopPropagation()">
+                <button *ngIf="canEdit" mat-icon-button matTooltip="Edit" (click)="router.navigate(['/inventory', v.id, 'edit']); $event.stopPropagation()">
                   <mat-icon style="font-size:18px;color:var(--hd-blue)">edit</mat-icon>
                 </button>
-                <button mat-icon-button matTooltip="Delete" (click)="confirmDelete(v); $event.stopPropagation()">
+                <button *ngIf="canDelete" mat-icon-button matTooltip="Delete" (click)="confirmDelete(v); $event.stopPropagation()">
                   <mat-icon style="font-size:18px;color:var(--hd-red)">delete_outline</mat-icon>
                 </button>
               </div>
@@ -221,7 +223,12 @@ export class VehicleListComponent implements OnInit {
   get uniqueLocations() { return [...new Set(this.dataSource.data.map((v: any) => v.location?.name).filter(Boolean))].sort(); }
 
   constructor(private api: ApiService, private dialog: MatDialog,
-              private snack: MatSnackBar, public router: Router) {}
+              private snack: MatSnackBar, public router: Router,
+              private auth: AuthService) {}
+
+  get canCreate(): boolean { return this.auth.hasPermission('INVENTORY_CREATE'); }
+  get canEdit(): boolean { return this.auth.hasPermission('INVENTORY_EDIT'); }
+  get canDelete(): boolean { return this.auth.hasPermission('INVENTORY_DELETE'); }
 
   ngOnInit() {
     this.dataSource.filterPredicate = (row: any, filter: string) => {

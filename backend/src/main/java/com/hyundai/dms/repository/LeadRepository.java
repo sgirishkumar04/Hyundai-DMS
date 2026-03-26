@@ -12,17 +12,21 @@ import java.util.List;
 
 public interface LeadRepository extends JpaRepository<Lead, Long> {
     boolean existsByLeadNumber(String leadNumber);
+    
+    @Query("SELECT MAX(l.leadNumber) FROM Lead l WHERE l.dealer.id = :dealerId")
+    String findMaxLeadNumber(@Param("dealerId") Long dealerId);
+
+    long countByDealerId(Long dealerId);
 
     @EntityGraph(attributePaths = {"customer", "assignedTo", "preferredModel", "preferredVariant", "preferredColor", "source"})
-    Page<Lead> findByStatus(Lead.LeadStatus status, Pageable pageable);
+    Page<Lead> findByStatusAndDealerId(Lead.LeadStatus status, Long dealerId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"customer", "assignedTo", "preferredModel", "preferredVariant", "preferredColor", "source"})
-    Page<Lead> findByAssignedToId(Long employeeId, Pageable pageable);
+    Page<Lead> findByAssignedToIdAndDealerId(Long employeeId, Long dealerId, Pageable pageable);
 
-    @Override
     @EntityGraph(attributePaths = {"customer", "assignedTo", "preferredModel", "preferredVariant", "preferredColor", "source"})
-    Page<Lead> findAll(Pageable pageable);
+    Page<Lead> findByDealerId(Long dealerId, Pageable pageable);
 
-    @Query(value = "CALL GetLeadFunnelCounts(:year, :month)", nativeQuery = true)
-    List<Object[]> getLeadFunnelCounts(@Param("year") Integer year, @Param("month") Integer month);
+    @Query(value = "CALL GetLeadFunnelCounts(:year, :month, :dealerId)", nativeQuery = true)
+    List<Object[]> getLeadFunnelCounts(@Param("year") Integer year, @Param("month") Integer month, @Param("dealerId") Long dealerId);
 }

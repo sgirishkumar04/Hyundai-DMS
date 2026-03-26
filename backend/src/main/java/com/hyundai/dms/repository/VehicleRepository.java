@@ -17,9 +17,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
            "WHERE v.status = 'IN_STOCK' AND (:modelId IS NULL OR m.id = :modelId)")
     Page<Vehicle> findAvailableByModel(@Param("modelId") Long modelId, Pageable pageable);
 
-    @Query(value = "CALL GetInventoryStatusSummary(:year, :month)", nativeQuery = true)
-    List<Object[]> getInventoryStatusSummary(@Param("year") Integer year, @Param("month") Integer month);
+    @Query(value = "CALL GetInventoryStatusSummary(:year, :month, :dealerId)", nativeQuery = true)
+    List<Object[]> getInventoryStatusSummary(@Param("year") Integer year, @Param("month") Integer month, @Param("dealerId") Long dealerId);
 
-    @Query(value = "CALL GetStockByModelCount(:year, :month)", nativeQuery = true)
-    List<Object[]> getStockByModelCount(@Param("year") Integer year, @Param("month") Integer month);
+    @Query(value = "CALL GetStockByModelCount(:year, :month, :dealerId)", nativeQuery = true)
+    List<Object[]> getStockByModelCount(@Param("year") Integer year, @Param("month") Integer month, @Param("dealerId") Long dealerId);
 }

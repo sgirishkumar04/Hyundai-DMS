@@ -1,5 +1,6 @@
 package com.hyundai.dms.controller;
 
+import com.hyundai.dms.security.DealerContext;
 import com.hyundai.dms.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,8 @@ public class ReportController {
     @GetMapping("/monthly-bookings")
     public ResponseEntity<List<Object[]>> monthlyBookings(
             @RequestParam(required = false) Integer year) {
-        return ResponseEntity.ok(bookingRepo.getMonthlyBookings(year));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(bookingRepo.getMonthlyBookings(year, dealerId));
     }
 
     /** Q8 – Top selling models */
@@ -29,7 +31,8 @@ public class ReportController {
     public ResponseEntity<List<Object[]>> topSellingModels(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(bookingRepo.getTopSellingModels(year, month));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(bookingRepo.getTopSellingModels(year, month, dealerId));
     }
 
     /** Q4 – Sales pipeline funnel */
@@ -37,7 +40,8 @@ public class ReportController {
     public ResponseEntity<List<Object[]>> salesPipeline(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(leadRepo.getLeadFunnelCounts(year, month));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(leadRepo.getLeadFunnelCounts(year, month, dealerId));
     }
 
     /** Q1 – Inventory status */
@@ -45,7 +49,8 @@ public class ReportController {
     public ResponseEntity<List<Object[]>> inventoryStatus(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(vehicleRepo.getInventoryStatusSummary(year, month));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(vehicleRepo.getInventoryStatusSummary(year, month, dealerId));
     }
 
     /** Q5 – Service workload */
@@ -53,7 +58,8 @@ public class ReportController {
     public ResponseEntity<List<Object[]>> serviceWorkload(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(serviceRepo.getWorkloadSummary(year, month));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(serviceRepo.getWorkloadSummary(year, month, dealerId));
     }
 
     /** Custom – Stock distribution by model */
@@ -61,7 +67,8 @@ public class ReportController {
     public ResponseEntity<List<Object[]>> stockByModel(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(vehicleRepo.getStockByModelCount(year, month));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(vehicleRepo.getStockByModelCount(year, month, dealerId));
     }
 
     /** Custom – Bookings distribution by model */
@@ -69,6 +76,7 @@ public class ReportController {
     public ResponseEntity<List<Object[]>> bookingsByModel(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(bookingRepo.getBookingsByModelCount(year, month));
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return ResponseEntity.ok(bookingRepo.getBookingsByModelCount(year, month, dealerId));
     }
 }

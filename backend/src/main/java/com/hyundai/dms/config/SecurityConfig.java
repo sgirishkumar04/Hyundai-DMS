@@ -50,16 +50,52 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/dealers/register").permitAll()     // public: new dealer sign-up
                 .requestMatchers(HttpMethod.GET, "/lookup/**").authenticated()
-                .requestMatchers("/employees/**").hasAnyRole("ADMIN", "SALES_MANAGER")
-                .requestMatchers("/vehicles/**").hasAnyRole("ADMIN", "INVENTORY_MANAGER", "SALES_MANAGER", "SALES_EXECUTIVE")
-                .requestMatchers("/customers/**").hasAnyRole("ADMIN", "SALES_MANAGER", "SALES_EXECUTIVE", "ACCOUNTS")
-                .requestMatchers("/leads/**").hasAnyRole("ADMIN", "SALES_MANAGER", "SALES_EXECUTIVE")
-                .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "SALES_MANAGER", "SALES_EXECUTIVE", "ACCOUNTS")
-                .requestMatchers("/service/**").hasAnyRole("ADMIN", "SERVICE_ADVISOR", "MECHANIC")
-                .requestMatchers("/parts/**").hasAnyRole("ADMIN", "INVENTORY_MANAGER", "SERVICE_ADVISOR")
+
+                // SUPER_ADMIN-only routes
+                .requestMatchers("/dealers/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/super-admin/**").hasRole("SUPER_ADMIN")
+
+                // GET (View-Only)
+                .requestMatchers(HttpMethod.GET, "/employees/**").hasAuthority("EMPLOYEES_VIEW")
+                .requestMatchers(HttpMethod.GET, "/vehicles/**").hasAuthority("INVENTORY_VIEW")
+                .requestMatchers(HttpMethod.GET, "/customers/**").hasAuthority("SALES_VIEW")
+                .requestMatchers(HttpMethod.GET, "/leads/**").hasAuthority("SALES_VIEW")
+                .requestMatchers(HttpMethod.GET, "/bookings/**").hasAuthority("SALES_VIEW")
+                .requestMatchers(HttpMethod.GET, "/service/**").hasAuthority("SERVICE_VIEW")
+                .requestMatchers(HttpMethod.GET, "/parts/**").hasAuthority("PARTS_VIEW")
+                .requestMatchers(HttpMethod.GET, "/reports/**").hasAuthority("REPORTS_VIEW")
+                
+                // POST (Create)
+                .requestMatchers(HttpMethod.POST, "/employees/**").hasAuthority("EMPLOYEES_CREATE")
+                .requestMatchers(HttpMethod.POST, "/vehicles/**").hasAuthority("INVENTORY_CREATE")
+                .requestMatchers(HttpMethod.POST, "/customers/**").hasAuthority("SALES_CREATE")
+                .requestMatchers(HttpMethod.POST, "/leads/**").hasAuthority("SALES_CREATE")
+                .requestMatchers(HttpMethod.POST, "/bookings/**").hasAuthority("SALES_CREATE")
+                .requestMatchers(HttpMethod.POST, "/service/**").hasAuthority("SERVICE_CREATE")
+                .requestMatchers(HttpMethod.POST, "/parts/**").hasAuthority("PARTS_CREATE")
+
+                // PUT (Edit)
+                .requestMatchers(HttpMethod.PUT, "/employees/**").hasAuthority("EMPLOYEES_EDIT")
+                .requestMatchers(HttpMethod.PUT, "/vehicles/**").hasAuthority("INVENTORY_EDIT")
+                .requestMatchers(HttpMethod.PUT, "/customers/**").hasAuthority("SALES_EDIT")
+                .requestMatchers(HttpMethod.PUT, "/leads/**").hasAuthority("SALES_EDIT")
+                .requestMatchers(HttpMethod.PUT, "/bookings/**").hasAuthority("SALES_EDIT")
+                .requestMatchers(HttpMethod.PUT, "/service/**").hasAuthority("SERVICE_EDIT")
+                .requestMatchers(HttpMethod.PUT, "/parts/**").hasAuthority("PARTS_EDIT")
+
+                // DELETE 
+                .requestMatchers(HttpMethod.DELETE, "/employees/**").hasAuthority("EMPLOYEES_DELETE")
+                .requestMatchers(HttpMethod.DELETE, "/vehicles/**").hasAuthority("INVENTORY_DELETE")
+                .requestMatchers(HttpMethod.DELETE, "/customers/**").hasAuthority("SALES_DELETE")
+                .requestMatchers(HttpMethod.DELETE, "/leads/**").hasAuthority("SALES_DELETE")
+                .requestMatchers(HttpMethod.DELETE, "/bookings/**").hasAuthority("SALES_DELETE")
+                .requestMatchers(HttpMethod.DELETE, "/service/**").hasAuthority("SERVICE_DELETE")
+                .requestMatchers(HttpMethod.DELETE, "/parts/**").hasAuthority("PARTS_DELETE")
+
+                // Other endpoints (Finance)
                 .requestMatchers("/finance/**").hasAnyRole("ADMIN", "ACCOUNTS", "SALES_MANAGER")
-                .requestMatchers("/reports/**").hasAnyRole("ADMIN", "SALES_MANAGER")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);

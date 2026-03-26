@@ -1,11 +1,14 @@
 package com.hyundai.dms.controller;
 
+import com.hyundai.dms.dto.request.BookingRequest;
 import com.hyundai.dms.entity.Booking;
 import com.hyundai.dms.service.impl.BookingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +38,11 @@ public class BookingController {
     @GetMapping("/{id}")
     public ResponseEntity<Booking> getById(@PathVariable Long id) {
         return ResponseEntity.ok(bookingService.getById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<Booking> create(@Valid @RequestBody BookingRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.create(req));
     }
 
     @DeleteMapping("/{id}")

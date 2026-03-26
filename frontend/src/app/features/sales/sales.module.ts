@@ -12,17 +12,28 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BookingListComponent } from './booking-list/booking-list.component';
+import { BookingFormComponent } from './booking-form/booking-form.component';
+import { BookingDetailComponent } from './booking-detail/booking-detail.component';
 
 @NgModule({
-  declarations: [BookingListComponent],
+  declarations: [BookingListComponent, BookingFormComponent, BookingDetailComponent],
   imports: [
     CommonModule,
-    RouterModule.forChild([{ path: '', component: BookingListComponent }]),
+    FormsModule, ReactiveFormsModule,
+    RouterModule.forChild([
+      { path: '', component: BookingListComponent },
+      { path: 'new', component: BookingFormComponent },
+      { path: ':id', component: BookingDetailComponent }
+    ]),
     MatCardModule, MatIconModule, MatButtonModule,
     MatTableModule, MatSortModule, MatPaginatorModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatProgressBarModule, MatTooltipModule
+    MatProgressBarModule, MatTooltipModule, MatButtonToggleModule,
+    MatAutocompleteModule
   ]
 })
 export class SalesModule {}

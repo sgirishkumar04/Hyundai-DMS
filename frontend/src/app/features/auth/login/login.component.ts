@@ -3,6 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
+import { roleHome } from '../../../core/guards/auth.guard';
 
 @Component({
   selector: 'app-login',
@@ -52,16 +53,24 @@ import { AuthService } from '../../../core/services/auth.service';
 
         <!-- Hint -->
         <div style="margin-top:20px;padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid var(--border)">
-          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Demo Credentials</div>
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Demo Credentials (all: Password&#64;123)</div>
           <div style="font-size:.78rem;color:var(--text-secondary);line-height:1.8">
-            <span style="font-weight:600;color:var(--hd-blue)">Admin:</span> admin&#64;hyundaidms.in / Password&#64;123<br>
-            <span style="font-weight:600;color:var(--hd-blue)">Sales Mgr:</span> sm&#64;hyundaidms.in / Password&#64;123
+            <span style="font-weight:600;color:var(--hd-blue)">Admin:</span> admin&#64;hyundaidms.in<br>
+            <span style="font-weight:600;color:var(--hd-blue)">Sales Manager:</span> sales.mgr&#64;hyundaidms.in<br>
+            <span style="font-weight:600;color:var(--hd-blue)">Sales Exec:</span> rahul.sales&#64;hyundaidms.in<br>
+            <span style="font-weight:600;color:var(--hd-blue)">Service Advisor:</span> vikram.svc&#64;hyundaidms.in<br>
+            <span style="font-weight:600;color:var(--hd-blue)">Mechanic:</span> suresh.mech&#64;hyundaidms.in
           </div>
         </div>
 
         <!-- Footer -->
-        <div style="margin-top:16px;text-align:center;font-size:.7rem;color:var(--text-muted)">
-          © 2026 Hyundai Motor India · Dealer Management System
+        <div style="margin-top:24px; text-align:center; display:flex; flex-direction:column; gap:12px;">
+          <div style="font-size:.85rem; color:var(--text-secondary)">
+            New dealership? <a routerLink="/login/register" style="color:var(--hd-blue); font-weight:600; text-decoration:none">Register Here</a>
+          </div>
+          <div style="font-size:.7rem; color:var(--text-muted)">
+            © 2026 Hyundai Motor India · Dealer Management System
+          </div>
         </div>
       </div>
     </div>
@@ -89,10 +98,14 @@ export class LoginComponent {
     this.errorMsg = '';
     const { email, password } = this.form.value;
     this.auth.login(email!, password!).subscribe({
-      next: () => { this.loading = false; this.router.navigate(['/dashboard']); },
-      error: () => {
+      next: (res) => {
+          this.loading = false;
+          const role = (res.role ?? '').replace('ROLE_', '');
+          this.router.navigate([roleHome(role)]);
+        },
+      error: (err) => {
         this.loading  = false;
-        this.errorMsg = 'Invalid email or password. Please check your credentials.';
+        this.errorMsg = err.error?.message || 'Invalid email or password. Please check your credentials.';
       }
     });
   }

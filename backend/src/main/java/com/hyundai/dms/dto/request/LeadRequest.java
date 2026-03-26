@@ -7,7 +7,9 @@ import java.time.LocalDate;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class LeadRequest {
     @NotBlank @Size(max = 20) private String leadNumber;
-    @NotNull  private Long customerId;
+    private Long customerId;
+    private String customerName;
+    private String customerPhone;
     @NotNull  private Long sourceId;
     @NotNull  private Long assignedTo;
     private Long preferredModelId;

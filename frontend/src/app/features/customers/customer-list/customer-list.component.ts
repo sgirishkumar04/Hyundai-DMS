@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../../core/services/api.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-customer-list',
@@ -18,6 +19,7 @@ import { Router } from '@angular/router';
           <p>Manage your customer database</p>
         </div>
         <button mat-raised-button style="background:var(--hd-blue);color:#fff"
+                *ngIf="canCreate"
                 (click)="router.navigate(['/customers/new'])">
           <mat-icon>person_add</mat-icon> Add Customer
         </button>
@@ -99,10 +101,10 @@ import { Router } from '@angular/router';
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let c">
               <div class="action-btns">
-                <button mat-icon-button matTooltip="Edit" (click)="router.navigate(['/customers', c.id, 'edit'])">
+                <button *ngIf="canEdit" mat-icon-button matTooltip="Edit" (click)="router.navigate(['/customers', c.id, 'edit'])">
                   <mat-icon style="font-size:18px;color:var(--hd-blue)">edit</mat-icon>
                 </button>
-                <button mat-icon-button matTooltip="Delete" (click)="confirmDelete(c)">
+                <button *ngIf="canDelete" mat-icon-button matTooltip="Delete" (click)="confirmDelete(c)">
                   <mat-icon style="font-size:18px;color:var(--hd-red)">delete_outline</mat-icon>
                 </button>
               </div>
@@ -135,7 +137,12 @@ export class CustomerListComponent implements OnInit {
   private colors = ['#002c5f','#0e7490','#1b8a4a','#6a1b9a','#c2410c','#b91c1c'];
 
   constructor(private api: ApiService, private dialog: MatDialog,
-              private snack: MatSnackBar, public router: Router) {}
+              private snack: MatSnackBar, public router: Router,
+              private auth: AuthService) {}
+
+  get canCreate(): boolean { return this.auth.hasPermission('SALES_CREATE'); }
+  get canEdit(): boolean { return this.auth.hasPermission('SALES_EDIT'); }
+  get canDelete(): boolean { return this.auth.hasPermission('SALES_DELETE'); }
 
   ngOnInit() {
     this.dataSource.filterPredicate = (row: any, filterStr: string) => {

@@ -197,7 +197,7 @@ export class DashboardComponent implements OnInit {
       next: (res) => {
         this.kpi.activeLeads = res.filter(r => r[0] !== 'LOST' && r[0] !== 'BOOKED').reduce((acc, curr) => acc + Number(curr[1]), 0);
       },
-      error: () => {}
+      error: (err) => { console.error('Dashboard Error:', err); }
     });
 
     // Load Inventory Pipeline
@@ -206,7 +206,7 @@ export class DashboardComponent implements OnInit {
         const inStockRow = res.find(r => r[0] === 'IN_STOCK');
         this.kpi.totalVehicles = inStockRow ? Number(inStockRow[1]) : 0;
       },
-      error: () => {}
+      error: (err) => { console.error('Dashboard Error:', err); }
     });
 
     // Load Service Workload (Global for total jobs, but we still use the month for the chart if we want to)
@@ -224,7 +224,7 @@ export class DashboardComponent implements OnInit {
           }]
         };
       },
-      error: () => {}
+      error: (err) => { console.error('Dashboard Error:', err); }
     });
 
     // Load Monthly Bookings
@@ -255,7 +255,7 @@ export class DashboardComponent implements OnInit {
            this.kpi.soldMonth = 0;
         }
       },
-      error: () => {}
+      error: (err) => { console.error('Dashboard Error:', err); }
     });
 
     // Load Top Models (Yearly instead of Monthly to avoid empty charts)
@@ -271,7 +271,7 @@ export class DashboardComponent implements OnInit {
           }]
         };
       },
-      error: () => {}
+      error: (err) => { console.error('Dashboard Error:', err); }
     });
 
     setTimeout(() => this.loadingKpi = false, 500);

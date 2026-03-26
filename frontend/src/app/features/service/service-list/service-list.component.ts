@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -26,7 +26,7 @@ import { Router } from '@angular/router';
           <mat-form-field appearance="outline" class="search-field">
             <mat-label>Search appointments…</mat-label>
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
-            <input matInput (keyup)="applyFilter($event)" placeholder="Appointment no, reg no, customer…">
+            <input #searchInput matInput (keyup)="applyFilter($event)" placeholder="Appointment no, reg no, customer…">
           </mat-form-field>
           <mat-form-field appearance="outline" style="max-width:200px">
             <mat-label>Service Type</mat-label>
@@ -127,7 +127,9 @@ import { Router } from '@angular/router';
 export class ServiceListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('searchInput') searchInput!: ElementRef;
 
+  appointments: any[] = [];
   columns = ['no','customer','vehicle','type','date','advisor','status','actions'];
   dataSource = new MatTableDataSource<any>([]);
   loading = false;
@@ -145,36 +147,64 @@ export class ServiceListComponent implements OnInit {
         this.dataSource.data = res.content ?? [];
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
+        this.setupFilterPredicate();
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: (err) => { 
+        console.error('Service Load Error:', err);
+        this.loading = false; 
+      }
     });
   }
 
+  setupFilterPredicate() {
+    this.dataSource.filterPredicate = (data: any, filterValue: string) => {
+      const filter = JSON.parse(filterValue || '{}');
+      
+      // 1. Search text filter
+      const searchStr = (data.appointmentNo + ' ' + (data.customer?.firstName || '') + ' ' + (data.customer?.lastName || '') + ' ' + (data.vehicleRegNo || '')).toLowerCase();
+      const searchMatch = !filter.search || searchStr.includes(filter.search);
+
+      // 2. Type filter
+      const typeMatch = !filter.type || data.serviceType === filter.type;
+
+      // 3. Status filter
+      const statusMatch = !filter.status || data.status === filter.status;
+
+      return searchMatch && typeMatch && statusMatch;
+    };
+  }
+
   applyFilter(e: Event) {
-    this.dataSource.filter = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    const search = (e.target as HTMLInputElement).value;
+    this.updateFilter();
   }
 
-  applyTypeFilter() {
-    this.dataSource.filterPredicate = (row: any, f: string) => !f || row.serviceType === f;
-    this.dataSource.filter = this.typeFilter;
-  }
+  applyTypeFilter() { this.updateFilter(); }
+  applyStatusFilter() { this.updateFilter(); }
 
-  applyStatusFilter() {
-    this.dataSource.filterPredicate = (row: any, f: string) => !f || row.status === f;
-    this.dataSource.filter = this.statusFilter;
+  private updateFilter() {
+    const search = this.searchInput?.nativeElement.value || '';
+    // We set the filter to a combined string to trigger the predicate
+    this.dataSource.filter = JSON.stringify({
+      search: search.toLowerCase(),
+      type: this.typeFilter,
+      status: this.statusFilter
+    });
   }
 
   typeClass(t: string): string {
     const m: Record<string, string> = {
       PERIODIC: 'badge-blue', REPAIR: 'badge-orange',
-      WARRANTY: 'badge-purple', ACCIDENTAL: 'badge-red', GENERAL_CHECKUP: 'badge-cyan'
+      WARRANTY: 'badge-purple', ACCIDENTAL: 'badge-red', 
+      RECALL: 'badge-orange', GENERAL_CHECKUP: 'badge-cyan'
     };
     return m[t] ?? 'badge-grey';
   }
 
   formatServiceType(t: string): string {
-    return (t ?? '').split('_').map((w: string) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+    return (t ?? '').replace(/_/g, ' ').toLowerCase()
+      .replace(/\b\w/g, c => c.toUpperCase());
   }
 
   statusClass(s: string): string {

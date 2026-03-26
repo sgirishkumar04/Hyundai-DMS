@@ -44,4 +44,10 @@ public class CustomerController {
         customerService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/next-code")
+    public ResponseEntity<java.util.Map<String, String>> getNextCode() {
+        String code = customerService.generateNextCode();
+        return ResponseEntity.ok(java.util.Collections.singletonMap("code", code));
+    }
 }

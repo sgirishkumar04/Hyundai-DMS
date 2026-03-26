@@ -10,11 +10,15 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    Optional<Customer> findByPhone(String phone);
-    boolean existsByCustomerCode(String customerCode);
+    Optional<Customer> findByPhoneAndDealerId(String phone, Long dealerId);
+    boolean existsByCustomerCodeAndDealerId(String customerCode, Long dealerId);
 
-    @Query("SELECT c FROM Customer c WHERE " +
+    @Query("SELECT c FROM Customer c WHERE c.dealer.id = :dealerId AND " +
            "(:search IS NULL OR LOWER(c.firstName) LIKE %:search% OR LOWER(c.lastName) LIKE %:search% " +
            "OR c.phone LIKE %:search% OR c.customerCode LIKE %:search%)")
-    Page<Customer> search(@Param("search") String search, Pageable pageable);
+    Page<Customer> search(@Param("search") String search, @Param("dealerId") Long dealerId, Pageable pageable);
+
+    Page<Customer> findByDealerId(Long dealerId, Pageable pageable);
+
+    long countByDealerId(Long dealerId);
 }

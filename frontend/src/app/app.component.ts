@@ -6,7 +6,7 @@ import { filter } from 'rxjs/operators';
 @Component({
   selector: 'app-root',
   template: `
-    <ng-container *ngIf="auth.isLoggedIn; else loginView">
+    <ng-container *ngIf="auth.isLoggedIn && !isLoginRoute(); else loginView">
       <div class="app-shell">
         <!-- Collapsible Sidebar -->
         <app-sidebar [collapsed]="sidebarCollapsed"></app-sidebar>
@@ -31,9 +31,13 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent {
   sidebarCollapsed = false;
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.auth.refreshProfile();
+  }
+
+  isLoginRoute(): boolean {
+    return this.router.url.includes('/login');
   }
 }

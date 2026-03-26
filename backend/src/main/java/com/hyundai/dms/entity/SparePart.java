@@ -5,13 +5,17 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "spare_parts",
     indexes = {
         @Index(columnList = "category"),
-        @Index(columnList = "supplier_id")
+        @Index(columnList = "supplier_id"),
+        @Index(columnList = "dealer_id")
     })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class SparePart {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,7 +46,12 @@ public class SparePart {
     private Supplier supplier;
 
     @Column(name = "is_active")
+    @com.fasterxml.jackson.annotation.JsonProperty("isActive")
     private Boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dealer_id")
+    private Dealer dealer;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

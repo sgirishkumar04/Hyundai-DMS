@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,10 +22,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Employee emp = employeeRepository.findByEmailAndIsActiveTrue(email)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        return User.builder()
-            .username(emp.getEmail())
-            .password(emp.getPasswordHash())
-            .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + emp.getRole().getName())))
-            .build();
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        // Add the primary role
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + emp.getRole().getName()));
+        
+        // Add all granular database permissions
+        if(emp.getRole().getPermissions() != null) {
+            authorities.addAll(emp.getRole().getPermissions().stream()
+                .map(p -> new SimpleGrantedAuthority(p.getName()))
+                .collect(Collectors.toList()));
+        }
+
+        return new UserPrincipal(emp, authorities);
     }
 }

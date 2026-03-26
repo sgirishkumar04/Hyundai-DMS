@@ -14,17 +14,23 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSortModule }    from '@angular/material/sort';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ServiceListComponent } from './service-list/service-list.component';
+import { ServiceFormComponent } from './service-form/service-form.component';
 
 @NgModule({
-  declarations: [ServiceListComponent],
+  declarations: [ServiceListComponent, ServiceFormComponent],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
-    RouterModule.forChild([{ path: '', component: ServiceListComponent }]),
+    RouterModule.forChild([
+      { path: '', component: ServiceListComponent },
+      { path: 'add', component: ServiceFormComponent },
+      { path: 'edit/:id', component: ServiceFormComponent }
+    ]),
     MatTableModule, MatPaginatorModule, MatSortModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatSelectModule, MatCardModule,
-    MatSnackBarModule, MatTooltipModule, MatProgressBarModule
+    MatSnackBarModule, MatTooltipModule, MatProgressBarModule, MatAutocompleteModule
   ]
 })
 export class ServiceModule {}

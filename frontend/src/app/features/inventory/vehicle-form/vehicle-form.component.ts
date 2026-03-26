@@ -41,7 +41,7 @@ import { VehicleVariant, Color, InventoryLocation } from '../../../core/models/m
               <mat-label>Variant</mat-label>
               <mat-select formControlName="variantId">
                 <mat-option *ngFor="let v of variants" [value]="v.id">
-                  {{v.model?.modelName}} – {{v.variantName}}
+                  {{v.model.modelName}} – {{v.variantName}}
                 </mat-option>
               </mat-select>
             </mat-form-field>

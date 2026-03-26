@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../../core/services/api.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-employee-list',
@@ -18,6 +19,7 @@ import { Router } from '@angular/router';
           <p>Manage dealership staff and roles</p>
         </div>
         <button mat-raised-button style="background:var(--hd-blue);color:#fff"
+                *ngIf="canCreate"
                 (click)="router.navigate(['/employees/add'])">
           <mat-icon>person_add</mat-icon> Add Employee
         </button>
@@ -104,10 +106,10 @@ import { Router } from '@angular/router';
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let e">
               <div class="action-btns">
-                <button mat-icon-button matTooltip="Edit" (click)="router.navigate(['/employees/edit', e.id])">
+                <button *ngIf="canEdit" mat-icon-button matTooltip="Edit" (click)="router.navigate(['/employees/edit', e.id])">
                   <mat-icon style="font-size:18px;color:var(--hd-blue)">edit</mat-icon>
                 </button>
-                <button mat-icon-button [matTooltip]="e.isActive ? 'Deactivate' : 'Activate'"
+                <button *ngIf="canEdit && canDeactivate(e)" mat-icon-button [matTooltip]="e.isActive ? 'Deactivate' : 'Activate'"
                         (click)="toggleActive(e)">
                   <mat-icon style="font-size:18px" [style.color]="e.isActive ? '#e6870a' : '#1b8a4a'">
                     {{e.isActive ? 'person_off' : 'how_to_reg'}}
@@ -142,7 +144,21 @@ export class EmployeeListComponent implements OnInit {
   private palette = ['#002c5f','#0e7490','#1b8a4a','#6a1b9a','#c2410c','#e6870a'];
 
   constructor(private api: ApiService, private dialog: MatDialog,
-              private snack: MatSnackBar, public router: Router) {}
+              private snack: MatSnackBar, public router: Router,
+              private auth: AuthService) {}
+
+  get canCreate(): boolean { return this.auth.hasPermission('EMPLOYEES_CREATE'); }
+  get canEdit(): boolean { return this.auth.hasPermission('EMPLOYEES_EDIT'); }
+  get canDelete(): boolean { return this.auth.hasPermission('EMPLOYEES_DELETE'); }
+  get isSuperAdmin(): boolean { return this.auth.currentUser?.isSuperAdmin ?? false; }
+
+  canDeactivate(e: any): boolean {
+    if (this.isSuperAdmin) return true;
+    const role = (e.role?.name ?? '').replace('ROLE_', '');
+    // Branch Admin cannot deactivate other Admins or Super Admins
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') return false;
+    return this.canEdit || this.canDelete;
+  }
 
   ngOnInit() { this.load(); }
 
@@ -150,7 +166,14 @@ export class EmployeeListComponent implements OnInit {
     this.loading = true;
     this.api.getEmployees({ page: 0, size: 200 }).subscribe({
       next: res => {
-        const data = res.content ?? [];
+        const data = (res.content ?? []).sort((a: any, b: any) => {
+          // Sort ADMINS to top
+          const aAdm = a.role?.name === 'ROLE_ADMIN';
+          const bAdm = b.role?.name === 'ROLE_ADMIN';
+          if (aAdm && !bAdm) return -1;
+          if (!aAdm && bAdm) return 1;
+          return a.firstName.localeCompare(b.firstName);
+        });
         this.dataSource.data = data;
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
@@ -197,9 +220,15 @@ export class EmployeeListComponent implements OnInit {
       }
     }).afterClosed().subscribe(ok => {
       if (!ok) return;
-      this.api.updateEmployee(e.id, { ...e, isActive: !e.isActive }).subscribe({
-        next: () => { this.snack.open(`Employee ${action.toLowerCase()}d`, 'Close', { duration: 3000 }); this.load(); },
-        error: () => { this.snack.open('Update failed', 'Close', { duration: 3000 }); }
+      this.api.deleteEmployee(e.id).subscribe({
+        next: () => { 
+          this.snack.open(`Account ${action.toLowerCase()}d successfully`, 'Close', { duration: 3000 }); 
+          this.load(); 
+        },
+        error: (err) => { 
+          console.error('Deactivation error:', err);
+          this.snack.open(err.error?.message || 'Update failed', 'Close', { duration: 3000 }); 
+        }
       });
     });
   }

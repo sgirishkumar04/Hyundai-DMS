@@ -35,6 +35,8 @@ import { SidebarComponent }    from './shared/components/sidebar/sidebar.compone
 import { HeaderComponent }     from './shared/components/header/header.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { JwtInterceptor }      from './core/interceptors/jwt.interceptor';
+import { ErrorInterceptor }    from './core/interceptors/error.interceptor';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 @NgModule({
   declarations: [
@@ -53,7 +55,11 @@ import { JwtInterceptor }      from './core/interceptors/jwt.interceptor';
     MatDialogModule, MatProgressBarModule, MatFormFieldModule, MatInputModule,
     MatCardModule, MatTableModule, MatPaginatorModule, MatSortModule, MatSelectModule
   ],
-  providers: [{ provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
+    provideCharts(withDefaultRegisterables())
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

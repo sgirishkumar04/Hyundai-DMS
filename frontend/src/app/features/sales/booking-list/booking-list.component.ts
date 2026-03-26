@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-booking-list',
@@ -18,6 +19,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           <p>View and manage customer vehicle bookings</p>
         </div>
         <button mat-raised-button style="background:var(--hd-blue);color:#fff"
+                *ngIf="canCreate"
                 (click)="router.navigate(['/sales/new'])">
           <mat-icon>add</mat-icon> New Booking
         </button>
@@ -31,7 +33,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             <input matInput (keyup)="applyFilter($event)" placeholder="Booking #, customer name…">
           </mat-form-field>
 
-          <mat-form-field appearance="outline" style="max-width:180px">
+          <mat-form-field appearance="outline" style="max-width:180px; margin-left:12px">
             <mat-label>Status</mat-label>
             <mat-select [(value)]="statusFilter" (selectionChange)="updateFilter()">
               <mat-option value="">All</mat-option>
@@ -40,6 +42,26 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
               <mat-option value="INVOICED">Invoiced</mat-option>
               <mat-option value="DELIVERED">Delivered</mat-option>
               <mat-option value="CANCELLED">Cancelled</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="max-width:180px; margin-left:12px">
+            <mat-label>Model</mat-label>
+            <mat-select [(value)]="modelFilter" (selectionChange)="updateFilter()">
+              <mat-option value="">All Models</mat-option>
+              <mat-option *ngFor="let m of models" [value]="m.id">
+                {{m.modelName}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="max-width:180px; margin-left:12px">
+            <mat-label>Sales Exec</mat-label>
+            <mat-select [(value)]="execFilter" (selectionChange)="updateFilter()">
+              <mat-option value="">All Executives</mat-option>
+              <mat-option *ngFor="let m of execs" [value]="m.id">
+                {{m.firstName}} {{m.lastName}}
+              </mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -105,7 +127,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
                 <button mat-icon-button (click)="router.navigate(['/sales', b.id]); $event.stopPropagation()">
                   <mat-icon style="font-size:18px;color:var(--hd-blue)">visibility</mat-icon>
                 </button>
-                <button mat-icon-button (click)="confirmDelete(b); $event.stopPropagation()">
+                <button *ngIf="canCreate" mat-icon-button (click)="confirmDelete(b); $event.stopPropagation()">
                   <mat-icon style="font-size:18px;color:var(--hd-red)">delete_outline</mat-icon>
                 </button>
               </div>
@@ -140,15 +162,31 @@ export class BookingListComponent implements OnInit {
   loading = false;
   searchText = '';
   statusFilter = '';
+  execFilter: number | '' = '';
+  modelFilter: number | '' = '';
+  execs: any[] = [];
+  models: any[] = [];
 
   constructor(private api: ApiService, private dialog: MatDialog,
-              private snack: MatSnackBar, public router: Router) {}
+              private snack: MatSnackBar, public router: Router,
+              private auth: AuthService) {}
+
+  get canCreate(): boolean {
+    return this.auth.hasPermission('SALES_CREATE') || this.auth.hasPermission('SALES_EDIT');
+  }
 
   ngOnInit() {
     this.dataSource.filterPredicate = (data, filter) => {
       const f = JSON.parse(filter);
+      
       const matchStatus = !f.status || data.status === f.status;
       if (!matchStatus) return false;
+
+      const matchExec = !f.exec || data.salesExec?.id === f.exec;
+      if (!matchExec) return false;
+
+      const matchModel = !f.model || data.variant?.model?.id === f.model;
+      if (!matchModel) return false;
 
       const text = f.text?.toLowerCase() || '';
       if (!text) return true;
@@ -165,6 +203,12 @@ export class BookingListComponent implements OnInit {
 
       return searchStr.includes(text);
     };
+    this.api.getEmployees({ roleId: 3, size: 100 }).subscribe(res => {
+      this.execs = res.content || [];
+    });
+    this.api.getModels().subscribe(res => {
+      this.models = res || [];
+    });
     this.load();
   }
 
@@ -189,7 +233,9 @@ export class BookingListComponent implements OnInit {
   updateFilter() {
     this.dataSource.filter = JSON.stringify({
       text: this.searchText,
-      status: this.statusFilter
+      status: this.statusFilter,
+      exec: this.execFilter,
+      model: this.modelFilter
     });
   }
 

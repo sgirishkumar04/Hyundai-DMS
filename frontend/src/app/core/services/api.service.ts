@@ -22,8 +22,12 @@ export class ApiService {
 
   login(email: string, password: string) { return this.http.post<any>(`${this.base}/auth/login`, { email, password }); }
 
-  // ── Lookup (dropdowns) ───────────────────────────────────────
+  // ── Lookup & Admin ───────────────────────────────────────
   getRoles(): Observable<Role[]>                      { return this.http.get<Role[]>(`${this.base}/lookup/roles`); }
+  getPermissions(): Observable<any[]>                 { return this.http.get<any[]>(`${this.base}/roles/permissions`); }
+  updateRolePermissions(roleId: number, permissionIds: number[]): Observable<Role> {
+    return this.http.put<Role>(`${this.base}/roles/${roleId}/permissions`, permissionIds);
+  }
   getDepartments(): Observable<Department[]>          { return this.http.get<Department[]>(`${this.base}/lookup/departments`); }
   getModels(): Observable<VehicleModel[]>             { return this.http.get<VehicleModel[]>(`${this.base}/lookup/vehicle-models`); }
   getVariants(modelId?: number): Observable<VehicleVariant[]> {
@@ -62,6 +66,7 @@ export class ApiService {
   createCustomer(data: any): Observable<Customer>       { return this.http.post<Customer>(`${this.base}/customers`, data); }
   updateCustomer(id: number, data: any): Observable<Customer> { return this.http.put<Customer>(`${this.base}/customers/${id}`, data); }
   deleteCustomer(id: number): Observable<void>          { return this.http.delete<void>(`${this.base}/customers/${id}`); }
+  getNextCustomerCode(): Observable<{code: string}>     { return this.http.get<{code: string}>(`${this.base}/customers/next-code`); }
 
   // ── Leads ─────────────────────────────────────────────────────
   getLeads(params: any): Observable<Page<Lead>>         { return this.http.get<Page<Lead>>(`${this.base}/leads`, { params }); }
@@ -70,10 +75,13 @@ export class ApiService {
   updateLead(id: number, data: any): Observable<Lead>   { return this.http.put<Lead>(`${this.base}/leads/${id}`, data); }
   deleteLead(id: number): Observable<void>              { return this.http.delete<void>(`${this.base}/leads/${id}`); }
   getLeadFunnel(): Observable<any[]>                    { return this.http.get<any[]>(`${this.base}/leads/funnel-summary`); }
+  getNextLeadNumber(): Observable<string>               { return this.http.get(`${this.base}/leads/next-number`, { responseType: 'text' }); }
 
   // ── Bookings (Sales) ──────────────────────────────────────────
   getBookings(params: any): Observable<Page<Booking>>   { return this.http.get<Page<Booking>>(`${this.base}/bookings`, { params }); }
   getBooking(id: number): Observable<Booking>           { return this.http.get<Booking>(`${this.base}/bookings/${id}`); }
+  createBooking(data: any): Observable<Booking>         { return this.http.post<Booking>(`${this.base}/bookings`, data); }
+  updateBooking(id: number, data: any): Observable<Booking> { return this.http.put<Booking>(`${this.base}/bookings/${id}`, data); }
   deleteBooking(id: number): Observable<void>           { return this.http.delete<void>(`${this.base}/bookings/${id}`); }
 
   // ── Service ───────────────────────────────────────────────────
@@ -88,6 +96,26 @@ export class ApiService {
   }
   updateAppointment(id: number, data: any): Observable<ServiceAppointment> {
     return this.http.put<ServiceAppointment>(`${this.base}/service/appointments/${id}`, data);
+  }
+
+  // ── Spare Parts ───────────────────────────────────────────────
+  getSpareParts(params: any): Observable<Page<SparePart>> {
+    return this.http.get<Page<SparePart>>(`${this.base}/parts`, { params });
+  }
+  getPartCategories(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/parts/categories`);
+  }
+  getPart(id: number): Observable<SparePart> {
+    return this.http.get<SparePart>(`${this.base}/parts/${id}`);
+  }
+  createSparePart(data: any): Observable<SparePart> {
+    return this.http.post<SparePart>(`${this.base}/parts`, data);
+  }
+  updateSparePart(id: number, data: any): Observable<SparePart> {
+    return this.http.put<SparePart>(`${this.base}/parts/${id}`, data);
+  }
+  deleteSparePart(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/parts/${id}`);
   }
 
   // ── Reports ──────────────────────────────────────────────────

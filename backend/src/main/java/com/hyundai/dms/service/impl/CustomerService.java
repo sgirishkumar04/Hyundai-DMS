@@ -1,5 +1,9 @@
 package com.hyundai.dms.service.impl;
 
+import com.hyundai.dms.security.DealerContext;
+import com.hyundai.dms.entity.Dealer;
+import com.hyundai.dms.repository.DealerRepository;
+
 import com.hyundai.dms.dto.request.CustomerRequest;
 import com.hyundai.dms.entity.Customer;
 import com.hyundai.dms.entity.CustomerAddress;
@@ -18,20 +22,28 @@ import java.util.stream.Collectors;
 public class CustomerService {
 
     private final CustomerRepository customerRepo;
+    private final DealerRepository dealerRepo;
 
     public Page<Customer> getAll(String search, Pageable pageable) {
-        return customerRepo.search(search, pageable);
+        Long dealerId = DealerContext.getCurrentDealerId();
+        return customerRepo.search(search, dealerId, pageable);
     }
 
     public Customer getById(Long id) {
+        Long dealerId = DealerContext.getCurrentDealerId();
         return customerRepo.findById(id)
+            .filter(c -> c.getDealer().getId().equals(dealerId))
             .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
     }
 
     @Transactional
     public Customer create(CustomerRequest req) {
-        if (customerRepo.existsByCustomerCode(req.getCustomerCode()))
-            throw new IllegalArgumentException("Customer code already exists");
+        Long dealerId = DealerContext.getCurrentDealerId();
+        Dealer dealer = dealerRepo.findById(dealerId)
+            .orElseThrow(() -> new ResourceNotFoundException("Dealer not found"));
+
+        if (customerRepo.existsByCustomerCodeAndDealerId(req.getCustomerCode(), dealerId))
+            throw new IllegalArgumentException("Customer code already exists for this dealer");
         Customer c = Customer.builder()
             .customerCode(req.getCustomerCode())
             .firstName(req.getFirstName())
@@ -46,6 +58,7 @@ public class CustomerService {
                 ? Customer.CustomerType.valueOf(req.getCustomerType()) : Customer.CustomerType.INDIVIDUAL)
             .companyName(req.getCompanyName())
             .gstNumber(req.getGstNumber())
+            .dealer(dealer)
             .build();
             
         if (req.getAddresses() != null) {
@@ -106,5 +119,11 @@ public class CustomerService {
     @Transactional
     public void delete(Long id) {
         customerRepo.deleteById(id);
+    }
+
+    public String generateNextCode() {
+        Long dealerId = DealerContext.getCurrentDealerId();
+        long count = customerRepo.countByDealerId(dealerId);
+        return String.format("CST-DLR%02d-%04d", dealerId, count + 1);
     }
 }

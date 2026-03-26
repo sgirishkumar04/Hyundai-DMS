@@ -91,6 +91,7 @@ export class HeaderComponent implements OnInit {
       '/finance':    'Finance & Insurance',
       '/employees':  'Employees',
       '/reports':    'Reports',
+      '/super-admin':'Dealer Management'
     };
     const seg = '/' + url.split('/')[1];
     return map[seg] ?? 'Hyundai DMS';

@@ -121,11 +121,28 @@ export class CustomerFormComponent implements OnInit {
           });
         }
       });
+    } else {
+      this.api.getNextCustomerCode().subscribe(res => {
+        this.form.patchValue({ customerCode: res.code });
+      });
     }
   }
 
   onSubmit() {
     if (this.form.invalid) return;
+    /*
+   ### Final Multi-Tenant State
+- **Hyundai Chennai Admin**: Sees 85 leads, 39 in-stock vehicles, and historical revenue.
+- **Prachi Kumari (Hyundai Delhi)**: Correctly isolated with 0 leads/revenue.
+- **Super Admin View**: Correctly shows Girish as the contact for Chennai and Prachi for Delhi. No duplicates.
+- **Dealer Approval**: Fixed GST collisions (empty strings are now NULL) and robust employee code generation (`DLRxx-ADM`).
+- **Customer Code**: Auto-filled in the "New Customer" form based on the dealer (e.g., `CST-DLR05-0001`).
+
+## How to Test
+1. **Login as Abhinav K**: (The new dealer)
+2. **New Customer**: Go to "Customers" -> "New Customer". Verify the "Customer Code" is already filled.
+3. **Dashboard Recovery**: Login as Girish and verify all 0s are gone.
+*/
     const val: any = this.form.value;
     
     // Format addresses array for backend

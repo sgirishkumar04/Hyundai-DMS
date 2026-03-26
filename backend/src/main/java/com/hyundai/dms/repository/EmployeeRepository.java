@@ -5,15 +5,26 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.EntityGraph;
+
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     Optional<Employee> findByEmailAndIsActiveTrue(String email);
-    boolean existsByEmail(String email);
-    boolean existsByEmployeeCode(String employeeCode);
+    Optional<Employee> findByEmail(String email);
+    boolean existsByEmployeeCodeAndDealerId(String employeeCode, Long dealerId);
 
-    @Query("SELECT e FROM Employee e WHERE e.isActive = true AND " +
+    @EntityGraph(attributePaths = {"role", "department"})
+    @Query("SELECT e FROM Employee e WHERE e.dealer.id = :dealerId AND e.isActive = true AND " +
            "(:search IS NULL OR LOWER(e.firstName) LIKE %:search% OR LOWER(e.lastName) LIKE %:search% OR e.employeeCode LIKE %:search%)")
-    Page<Employee> searchActive(String search, Pageable pageable);
+    Page<Employee> searchActive(@Param("search") String search, @Param("dealerId") Long dealerId, Pageable pageable);
+
+    Page<Employee> findByDealerId(Long dealerId, Pageable pageable);
+    
+    @Query("SELECT MAX(e.employeeCode) FROM Employee e WHERE e.dealer.id = :dealerId")
+    String findMaxEmployeeCode(@Param("dealerId") Long dealerId);
+    
+    Long countByDealerId(Long dealerId);
 }

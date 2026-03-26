@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -56,9 +55,7 @@ public class VehicleService {
             .status(v.getStatus().name())
             .build();
 
-        Optional<Booking> bookingOpt = bookingRepo.findByVehicleId(v.getId());
-        if (bookingOpt.isPresent()) {
-            Booking b = bookingOpt.get();
+        bookingRepo.findByVehicleId(v.getId()).stream().findFirst().ifPresent(b -> {
             dto.setSalesInfo(VehicleDetailsDTO.SalesInfo.builder()
                 .bookingNumber(b.getBookingNumber())
                 .customerName(b.getCustomer().getFirstName() + " " + b.getCustomer().getLastName())
@@ -69,7 +66,7 @@ public class VehicleService {
                 .deliveryDate(b.getExpectedDelivery())
                 .invoiceNumber(b.getStatus() == Booking.BookingStatus.INVOICED || b.getStatus() == Booking.BookingStatus.DELIVERED ? "INV-" + b.getBookingNumber() : null)
                 .build());
-        }
+        });
 
         return dto;
     }
@@ -93,6 +90,7 @@ public class VehicleService {
                 ? Vehicle.VehicleStatus.valueOf(req.getStatus()) : Vehicle.VehicleStatus.IN_STOCK)
             .invoiceDate(req.getInvoiceDate())
             .dealerCost(req.getDealerCost())
+            .dealer(Dealer.builder().id(com.hyundai.dms.security.DealerContext.getCurrentDealerId()).build())
             .build();
         return vehicleRepo.save(v);
     }
@@ -121,6 +119,7 @@ public class VehicleService {
     }
 
     public List<Object[]> getInventorySummary() {
-        return vehicleRepo.getInventoryStatusSummary(null, null);
+        Long dealerId = com.hyundai.dms.security.DealerContext.getCurrentDealerId();
+        return vehicleRepo.getInventoryStatusSummary(null, null, dealerId);
     }
 }

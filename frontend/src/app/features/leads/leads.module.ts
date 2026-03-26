@@ -18,6 +18,8 @@ import { MatNativeDateModule }  from '@angular/material/core';
 import { MatSortModule }       from '@angular/material/sort';
 import { MatDialogModule }     from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { LeadListComponent } from './lead-list/lead-list.component';
 import { LeadFormComponent } from './lead-form/lead-form.component';
 
@@ -33,7 +35,7 @@ import { LeadFormComponent } from './lead-form/lead-form.component';
     MatTableModule, MatPaginatorModule, MatSortModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatSelectModule, MatCardModule,
     MatSnackBarModule, MatTooltipModule, MatChipsModule, MatDialogModule, MatProgressBarModule,
-    MatDatepickerModule, MatNativeDateModule
+    MatDatepickerModule, MatNativeDateModule, MatButtonToggleModule, MatAutocompleteModule
   ]
 })
 export class LeadsModule {}

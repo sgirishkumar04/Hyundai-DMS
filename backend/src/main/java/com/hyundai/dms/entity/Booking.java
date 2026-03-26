@@ -6,14 +6,18 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "bookings",
     indexes = {
         @Index(columnList = "status"),
         @Index(columnList = "customer_id"),
-        @Index(columnList = "sales_exec_id")
+        @Index(columnList = "sales_exec_id"),
+        @Index(columnList = "dealer_id")
     })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Booking {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,7 +26,7 @@ public class Booking {
     private String bookingNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lead_id", nullable = false)
+    @JoinColumn(name = "lead_id")
     private Lead lead;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -44,6 +48,10 @@ public class Booking {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dealer_id")
+    private Dealer dealer;
 
     @Column(name = "ex_showroom", nullable = false, precision = 12, scale = 2)
     private BigDecimal exShowroom;

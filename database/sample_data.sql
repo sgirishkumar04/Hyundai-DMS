@@ -15,6 +15,32 @@ INSERT INTO roles (id, name, description) VALUES
 (6, 'INVENTORY_MANAGER', 'Inventory Manager'),
 (7, 'ACCOUNTS', 'Accounts & Finance');
 
+TRUNCATE TABLE permissions;
+INSERT INTO permissions (id, name, description) VALUES 
+(1, 'SALES_VIEW', 'View Customers, Leads, Bookings'), (2, 'SALES_CREATE', 'Create Leads, Bookings'), (3, 'SALES_EDIT', 'Edit Customers, Leads, Bookings'), (4, 'SALES_DELETE', 'Delete Sales Records'),
+(5, 'INVENTORY_VIEW', 'View Vehicles'), (6, 'INVENTORY_CREATE', 'Add Vehicles'), (7, 'INVENTORY_EDIT', 'Edit Vehicles'), (8, 'INVENTORY_DELETE', 'Delete Vehicles'),
+(9, 'SERVICE_VIEW', 'View Service Records'), (10, 'SERVICE_CREATE', 'Create Appointments'), (11, 'SERVICE_EDIT', 'Edit Service Status'), (12, 'SERVICE_DELETE', 'Delete Service Records'),
+(13, 'PARTS_VIEW', 'View Parts'), (14, 'PARTS_CREATE', 'Add Parts'), (15, 'PARTS_EDIT', 'Edit Parts'), (16, 'PARTS_DELETE', 'Delete Parts'),
+(17, 'EMPLOYEES_VIEW', 'View Staff'), (18, 'EMPLOYEES_CREATE', 'Add Staff'), (19, 'EMPLOYEES_EDIT', 'Edit Staff'), (20, 'EMPLOYEES_DELETE', 'Delete Staff'),
+(21, 'REPORTS_VIEW', 'View Reports');
+
+TRUNCATE TABLE role_permissions;
+INSERT INTO role_permissions (role_id, permission_id) VALUES 
+-- ADMIN: All permissions
+(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(1,8),(1,9),(1,10),(1,11),(1,12),(1,13),(1,14),(1,15),(1,16),(1,17),(1,18),(1,19),(1,20),(1,21),
+-- SALES_MANAGER: Sales, Inventory View, Reports
+(2,1),(2,5),(2,17),(2,21),
+-- SALES_EXECUTIVE: Sales (CRUD), Inventory View, Reports (Dashboard)
+(3,1),(3,2),(3,3),(3,4),(3,5),(3,17),(3,21),
+-- SERVICE_ADVISOR: Service (View/Create), Parts (View/Create)
+(4,9),(4,10),(4,13),(4,14),
+-- MECHANIC: Service View/Edit, Parts View
+(5,9),(5,11),(5,13),
+-- INVENTORY_MANAGER: Inventory (View/Create), Parts (View/Create), Reports
+(6,5),(6,6),(6,13),(6,14),(6,21),
+-- ACCOUNTS: Sales View, Reports
+(7,1),(7,3),(7,9),(7,13),(7,21);
+
 TRUNCATE TABLE departments;
 INSERT INTO departments (id, name) VALUES 
 (1, 'Management'), (2, 'Sales'), (3, 'Service'), (4, 'Inventory'), (5, 'Accounts');
@@ -42,20 +68,20 @@ INSERT INTO inventory_locations (id, name, address) VALUES
 
 -- 2. Employees (Password is: Password@123)
 TRUNCATE TABLE employees;
-INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, password_hash, department_id, role_id, date_of_join) VALUES 
-(1, 'EMP001', 'S', 'GIRISH KUMAR', 'admin@hyundaidms.in', '9876543210', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 1, 1, '2020-01-15'),
-(2, 'EMP002', 'Priya', 'Sharma', 'sales.mgr@hyundaidms.in', '9876543211', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 2, '2020-03-10'),
-(3, 'EMP003', 'Rahul', 'Verma', 'rahul.sales@hyundaidms.in', '9876543212', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 3, '2021-06-01'),
-(4, 'EMP004', 'Anita', 'Desai', 'anita.sales@hyundaidms.in', '9876543213', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 3, '2021-08-15'),
-(5, 'EMP005', 'Vikram', 'Singh', 'vikram.svc@hyundaidms.in', '9876543214', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 3, 4, '2020-11-20'),
-(6, 'EMP006', 'Suresh', 'Babu', 'suresh.mech@hyundaidms.in', '9876543215', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 3, 5, '2022-01-10'),
-(7, 'EMP007', 'Ramesh', 'Kumar', 'ramesh.mech@hyundaidms.in', '9876543216', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 3, 5, '2022-02-15'),
-(8, 'EMP008', 'Karthik', 'Nair', 'karthik.sales@hyundaidms.in', '9876543217', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 3, '2023-01-05'),
-(9, 'EMP009', 'Neha', 'Gupta', 'neha.inv@hyundaidms.in', '9876543218', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 4, 6, '2024-05-10');
+INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, password_hash, department_id, role_id, date_of_join, is_active) VALUES 
+(1, 'EMP001', 'S', 'GIRISH KUMAR', 'admin@hyundaidms.in', '9876543210', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 1, 1, '2020-01-15', 1),
+(2, 'EMP002', 'Priya', 'Sharma', 'sales.mgr@hyundaidms.in', '9876543211', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 2, '2020-03-10', 1),
+(3, 'EMP003', 'Rahul', 'Verma', 'rahul.sales@hyundaidms.in', '9876543212', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 3, '2021-06-01', 1),
+(4, 'EMP004', 'Anita', 'Desai', 'anita.sales@hyundaidms.in', '9876543213', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 3, '2021-08-15', 1),
+(5, 'EMP005', 'Vikram', 'Singh', 'vikram.svc@hyundaidms.in', '9876543214', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 3, 4, '2020-11-20', 1),
+(6, 'EMP006', 'Suresh', 'Babu', 'suresh.mech@hyundaidms.in', '9876543215', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 3, 5, '2022-01-10', 1),
+(7, 'EMP007', 'Ramesh', 'Kumar', 'ramesh.mech@hyundaidms.in', '9876543216', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 3, 5, '2022-02-15', 1),
+(8, 'EMP008', 'Karthik', 'Nair', 'karthik.sales@hyundaidms.in', '9876543217', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 2, 3, '2023-01-05', 1),
+(9, 'EMP009', 'Neha', 'Gupta', 'neha.inv@hyundaidms.in', '9876543218', '$2a$10$uHYn5GiNxBxHgyp3hxNA9eqHc2Puhy6NniF.C/gWZgqjdnKlRjyLW', 4, 6, '2024-05-10', 1);
 
-TRUNCATE TABLE mechanics;
-INSERT INTO mechanics (id, employee_id, speciality) VALUES 
-(1, 6, 'General Service'), (2, 7, 'Engine & Transmission');
+-- TRUNCATE TABLE mechanics;
+-- INSERT INTO mechanics (id, employee_id, speciality) VALUES 
+-- (1, 6, 'General Service'), (2, 7, 'Engine & Transmission');
 
 -- 3. Vehicle Models & Variants
 TRUNCATE TABLE vehicle_models;
@@ -157,14 +183,14 @@ INSERT INTO service_appointments (id, appointment_no, customer_id, vehicle_reg_n
 (7, 'SRV0007', 7, 'KA03MN3434', 5, '2025-09-22 15:30:00', 'PERIODIC', 'COMPLETED', '2025-09-18 10:00:00'),
 (8, 'SRV0008', 10, 'KA05OP5656', 5, '2026-01-20 09:00:00', 'REPAIR', 'COMPLETED', '2026-01-15 10:00:00');
 
-TRUNCATE TABLE job_cards;
-INSERT INTO job_cards (id, job_card_no, appointment_id, mechanic_id, labour_cost, parts_cost, total_cost, status, created_at) VALUES 
-(1, 'JC0001', 1, 1, 1500, 3500, 5000, 'COMPLETED', '2025-10-15 10:30:00'),
-(2, 'JC0002', 2, 2, 2000, 8000, 10000, 'IN_PROGRESS', '2025-11-20 14:30:00'),
-(3, 'JC0003', 3, 1, 12000, 45000, 57000, 'COMPLETED', '2025-12-05 10:00:00'),
-(4, 'JC0004', 4, 2, 0, 0, 0, 'COMPLETED', '2026-01-10 11:30:00'),
-(5, 'JC0005', 7, 1, 1800, 4200, 6000, 'COMPLETED', '2025-09-22 16:00:00'),
-(6, 'JC0006', 8, 2, 3500, 15000, 18500, 'COMPLETED', '2026-01-20 09:30:00');
+-- TRUNCATE TABLE job_cards;
+-- INSERT INTO job_cards (id, job_card_no, appointment_id, mechanic_id, labour_cost, parts_cost, total_cost, status, created_at) VALUES 
+-- (1, 'JC0001', 1, 1, 1500, 3500, 5000, 'COMPLETED', '2025-10-15 10:30:00'),
+-- (2, 'JC0002', 2, 2, 2000, 8000, 10000, 'IN_PROGRESS', '2025-11-20 14:30:00'),
+-- (3, 'JC0003', 3, 1, 12000, 45000, 57000, 'COMPLETED', '2025-12-05 10:00:00'),
+-- (4, 'JC0004', 4, 2, 0, 0, 0, 'COMPLETED', '2026-01-10 11:30:00'),
+-- (5, 'JC0005', 7, 1, 1800, 4200, 6000, 'COMPLETED', '2025-09-22 16:00:00'),
+-- (6, 'JC0006', 8, 2, 3500, 15000, 18500, 'COMPLETED', '2026-01-20 09:30:00');
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -239,18 +265,6 @@ INSERT INTO leads (id, lead_number, customer_id, source_id, assigned_to, preferr
 (45, 'LD0045', 45, 5, 8, 4, 'TEST_DRIVE', '2026-02-21 14:15:00');
 
 -- MORE BOOKINGS
-INSERT INTO bookings (id, booking_number, lead_id, customer_id, variant_id, color_id, sales_exec_id, vehicle_id, ex_showroom, total_on_road, status, created_at) VALUES 
-(6, 'BKG0006', 16, 16, 5, 1, 3, 11, 1423000, 1650000, 'DELIVERED', '2025-09-10 11:00:00'),
-(7, 'BKG0007', 19, 19, 2, 2, 3, 12, 1900000, 2185000, 'DELIVERED', '2025-09-25 14:00:00'),
-(8, 'BKG0008', 23, 23, 7, 7, 4, 13, 3546000, 4070000, 'INVOICED', '2025-10-20 10:30:00'),
-(9, 'BKG0009', 25, 25, 1, 5, 3, 14, 1087000, 1250000, 'ALLOCATED', '2025-10-30 15:45:00'),
-(10, 'BKG0010', 27, 27, 2, 8, 8, 15, 1900000, 2185000, 'DELIVERED', '2025-11-15 11:20:00'),
-(11, 'BKG0011', 31, 31, 7, 1, 3, 16, 3546000, 4070000, 'DELIVERED', '2025-12-10 11:00:00'),
-(12, 'BKG0012', 34, 34, 3, 2, 3, 17, 894000, 1030000, 'ALLOCATED', '2025-12-25 14:00:00'),
-(13, 'BKG0013', 38, 38, 8, 7, 4, 18, 4495000, 5170000, 'INVOICED', '2026-01-20 10:30:00'),
-(14, 'BKG0014', 40, 40, 5, 5, 3, 19, 1423000, 1650000, 'DELIVERED', '2026-01-30 15:45:00'),
-(15, 'BKG0015', 42, 42, 3, 8, 8, NULL, 894000, 1030000, 'BOOKED', '2026-02-15 11:20:00');
-
 -- 20 MORE VEHICLES IN INVENTORY
 INSERT INTO vehicles (id, vin, engine_number, chassis_number, variant_id, color_id, location_id, mfg_year, mfg_date, arrival_date, status, dealer_cost, created_at) VALUES 
 (11, 'VIN0000000010011', 'ENG0011', 'CHA0011', 1, 2, 1, 2025, '2025-08-20', '2025-08-30', 'SOLD', 1000000, '2025-09-15 10:00:00'),
@@ -274,6 +288,19 @@ INSERT INTO vehicles (id, vin, engine_number, chassis_number, variant_id, color_
 (29, 'VIN0000000010029', 'ENG0029', 'CHA0029', 7, 9, 2, 2026, '2026-03-25', '2026-04-01', 'IN_STOCK', 3250000, '2026-04-05 10:00:00'),
 (30, 'VIN0000000010030', 'ENG0030', 'CHA0030', 3, 1, 1, 2026, '2026-03-30', '2026-04-08', 'IN_STOCK', 800000, '2026-04-10 10:00:00');
 
+-- MORE BOOKINGS
+INSERT INTO bookings (id, booking_number, lead_id, customer_id, variant_id, color_id, sales_exec_id, vehicle_id, ex_showroom, total_on_road, status, created_at) VALUES 
+(6, 'BKG0006', 16, 16, 5, 1, 3, 11, 1423000, 1650000, 'DELIVERED', '2025-09-10 11:00:00'),
+(7, 'BKG0007', 19, 19, 2, 2, 3, 12, 1900000, 2185000, 'DELIVERED', '2025-09-25 14:00:00'),
+(8, 'BKG0008', 23, 23, 7, 7, 4, 13, 3546000, 4070000, 'INVOICED', '2025-10-20 10:30:00'),
+(9, 'BKG0009', 25, 25, 1, 5, 3, 14, 1087000, 1250000, 'ALLOCATED', '2025-10-30 15:45:00'),
+(10, 'BKG0010', 27, 27, 2, 8, 8, 15, 1900000, 2185000, 'DELIVERED', '2025-11-15 11:20:00'),
+(11, 'BKG0011', 31, 31, 7, 1, 3, 16, 3546000, 4070000, 'DELIVERED', '2025-12-10 11:00:00'),
+(12, 'BKG0012', 34, 34, 3, 2, 3, 17, 894000, 1030000, 'ALLOCATED', '2025-12-25 14:00:00'),
+(13, 'BKG0013', 38, 38, 8, 7, 4, 18, 4495000, 5170000, 'INVOICED', '2026-01-20 10:30:00'),
+(14, 'BKG0014', 40, 40, 5, 5, 3, 19, 1423000, 1650000, 'DELIVERED', '2026-01-30 15:45:00'),
+(15, 'BKG0015', 42, 42, 3, 8, 8, NULL, 894000, 1030000, 'BOOKED', '2026-02-15 11:20:00');
+
 
 -- MORE SERVICE APPOINTMENTS & JOB CARDS
 INSERT INTO service_appointments (id, appointment_no, customer_id, vehicle_reg_no, appointed_by, appointment_date, service_type, status, created_at) VALUES 
@@ -286,13 +313,13 @@ INSERT INTO service_appointments (id, appointment_no, customer_id, vehicle_reg_n
 (15, 'SRV0015', 22, 'KA03MN7777', 5, '2025-09-12 15:30:00', 'PERIODIC', 'COMPLETED', '2025-09-08 10:00:00'),
 (16, 'SRV0016', 23, 'KA05OP8888', 5, '2026-01-30 09:00:00', 'REPAIR', 'COMPLETED', '2026-01-25 10:00:00');
 
-INSERT INTO job_cards (id, job_card_no, appointment_id, mechanic_id, labour_cost, parts_cost, total_cost, status, created_at) VALUES 
-(7, 'JC0007', 9, 1, 1500, 3500, 5000, 'COMPLETED', '2025-10-05 10:30:00'),
-(8, 'JC0008', 10, 2, 2000, 8000, 10000, 'IN_PROGRESS', '2025-11-10 14:30:00'),
-(9, 'JC0009', 11, 1, 12000, 45000, 57000, 'COMPLETED', '2025-12-15 10:00:00'),
-(10, 'JC0010', 12, 2, 0, 0, 0, 'COMPLETED', '2026-01-20 11:30:00'),
-(11, 'JC0011', 15, 1, 1800, 4200, 6000, 'COMPLETED', '2025-09-12 16:00:00'),
-(12, 'JC0012', 16, 2, 3500, 15000, 18500, 'COMPLETED', '2026-01-30 09:30:00');
+-- INSERT INTO job_cards (id, job_card_no, appointment_id, mechanic_id, labour_cost, parts_cost, total_cost, status, created_at) VALUES 
+-- (7, 'JC0007', 9, 1, 1500, 3500, 5000, 'COMPLETED', '2025-10-05 10:30:00'),
+-- (8, 'JC0008', 10, 2, 2000, 8000, 10000, 'IN_PROGRESS', '2025-11-10 14:30:00'),
+-- (9, 'JC0009', 11, 1, 12000, 45000, 57000, 'COMPLETED', '2025-12-15 10:00:00'),
+-- (10, 'JC0010', 12, 2, 0, 0, 0, 'COMPLETED', '2026-01-20 11:30:00'),
+-- (11, 'JC0011', 15, 1, 1800, 4200, 6000, 'COMPLETED', '2025-09-12 16:00:00'),
+-- (12, 'JC0012', 16, 2, 3500, 15000, 18500, 'COMPLETED', '2026-01-30 09:30:00');
 
 
 
@@ -363,9 +390,9 @@ INSERT INTO service_appointments (appointment_no, customer_id, vehicle_reg_no, a
 ('SRV0019', 3, 'KA05EF9012', 5, '2026-03-15 09:30:00', 'ACCIDENTAL', 'SCHEDULED', '2026-03-13 14:15:00'),
 ('SRV0020', 4, 'KA02GH3456', 5, '2026-03-16 11:00:00', 'WARRANTY', 'SCHEDULED', '2026-03-14 09:45:00');
 
-INSERT INTO job_cards (job_card_no, appointment_id, mechanic_id, labour_cost, parts_cost, total_cost, status, created_at) VALUES 
-('JC0013', 17, 1, 1500, 3500, 5000, 'OPEN', '2026-03-14 10:15:00'),
-('JC0014', 18, 2, 2000, 1500, 3500, 'IN_PROGRESS', '2026-03-14 11:30:00');
+-- INSERT INTO job_cards (job_card_no, appointment_id, mechanic_id, labour_cost, parts_cost, total_cost, status, created_at) VALUES 
+-- ('JC0013', 17, 1, 1500, 3500, 5000, 'OPEN', '2026-03-14 10:15:00'),
+-- ('JC0014', 18, 2, 2000, 1500, 3500, 'IN_PROGRESS', '2026-03-14 11:30:00');
 
 INSERT INTO bookings (id, booking_number, lead_id, customer_id, variant_id, color_id, sales_exec_id, vehicle_id, ex_showroom, total_on_road, status, created_at) VALUES 
 (16, 'BK0016', 46, 1, 1, 1, 3, NULL, 1087000.00, 1250000.00, 'BOOKED', '2026-03-01 10:30:00'),

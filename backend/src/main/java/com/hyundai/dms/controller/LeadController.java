@@ -52,4 +52,9 @@ public class LeadController {
     public ResponseEntity<List<Object[]>> funnelSummary() {
         return ResponseEntity.ok(leadService.getFunnelSummary());
     }
+
+    @GetMapping("/next-number")
+    public ResponseEntity<String> getNextLeadNumber() {
+        return ResponseEntity.ok(leadService.generateNextLeadNumber());
+    }
 }

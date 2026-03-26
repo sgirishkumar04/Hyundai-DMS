@@ -10,10 +10,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface ServiceAppointmentRepository extends JpaRepository<ServiceAppointment, Long> {
-    boolean existsByAppointmentNo(String appointmentNo);
-    Page<ServiceAppointment> findByCustomerId(Long customerId, Pageable pageable);
-    Page<ServiceAppointment> findByStatus(ServiceAppointment.AppointmentStatus status, Pageable pageable);
+    boolean existsByAppointmentNoAndDealerId(String appointmentNo, Long dealerId);
+    Page<ServiceAppointment> findByCustomerIdAndDealerId(Long customerId, Long dealerId, Pageable pageable);
+    Page<ServiceAppointment> findByStatusAndDealerId(ServiceAppointment.AppointmentStatus status, Long dealerId, Pageable pageable);
 
-    @Query(value = "CALL GetWorkloadSummary(:year, :month)", nativeQuery = true)
-    List<Object[]> getWorkloadSummary(@Param("year") Integer year, @Param("month") Integer month);
+    @Query(value = "CALL GetWorkloadSummary(:year, :month, :dealerId)", nativeQuery = true)
+    List<Object[]> getWorkloadSummary(@Param("year") Integer year, @Param("month") Integer month, @Param("dealerId") Long dealerId);
+
+    Page<ServiceAppointment> findByDealerId(Long dealerId, Pageable pageable);
 }
