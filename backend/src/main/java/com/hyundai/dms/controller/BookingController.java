@@ -45,6 +45,11 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.create(req));
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Booking> updateStatus(@PathVariable Long id, @RequestParam Booking.BookingStatus status) {
+        return ResponseEntity.ok(bookingService.updateStatus(id, status));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         bookingService.delete(id);

@@ -26,6 +26,7 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtTokenProvider tokenProvider;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
@@ -50,7 +51,8 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/dealers/register").permitAll()     // public: new dealer sign-up
+                .requestMatchers("/dealers/register").permitAll()
+                .requestMatchers("/monitor/**", "/monitor", "/actuator/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/lookup/**").authenticated()
 
                 // SUPER_ADMIN-only routes
@@ -65,7 +67,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/bookings/**").hasAuthority("SALES_VIEW")
                 .requestMatchers(HttpMethod.GET, "/service/**").hasAuthority("SERVICE_VIEW")
                 .requestMatchers(HttpMethod.GET, "/parts/**").hasAuthority("PARTS_VIEW")
-                .requestMatchers(HttpMethod.GET, "/reports/**").hasAuthority("REPORTS_VIEW")
+                .requestMatchers(HttpMethod.GET, "/reports/**").hasAnyAuthority("REPORTS_VIEW", "ROLE_SUPER_ADMIN")
                 
                 // POST (Create)
                 .requestMatchers(HttpMethod.POST, "/employees/**").hasAuthority("EMPLOYEES_CREATE")
@@ -98,7 +100,8 @@ public class SecurityConfig {
                 .requestMatchers("/finance/**").hasAnyRole("ADMIN", "ACCOUNTS", "SALES_MANAGER")
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

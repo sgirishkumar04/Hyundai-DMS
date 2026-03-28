@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ChartData, ChartOptions } from 'chart.js';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { StockDistributionDialogComponent } from './stock-distribution-dialog/stock-distribution-dialog.component';
 
 @Component({
@@ -18,17 +19,27 @@ import { StockDistributionDialogComponent } from './stock-distribution-dialog/st
         <button mat-flat-button color="primary" (click)="downloadSalesCsv()" style="margin-right:8px; background:var(--hd-blue);">
           <mat-icon>file_download</mat-icon> Export CSV
         </button>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" style="max-width:130px">
+
+        <mat-form-field *ngIf="auth.isSuperAdmin" appearance="outline" subscriptSizing="dynamic" style="width:200px">
+          <mat-label>Select Dealer</mat-label>
+          <mat-select formControlName="dealerId" (selectionChange)="loadAll()">
+            <mat-option value="">All Dealers (Network-Wide)</mat-option>
+            <mat-option *ngFor="let d of dealers" [value]="d.id">{{d.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width:140px">
           <mat-label>Year</mat-label>
           <mat-select formControlName="year" (selectionChange)="loadAll()">
-            <mat-option [value]="null">All Years</mat-option>
+            <mat-option value="">All Years</mat-option>
             <mat-option *ngFor="let y of years" [value]="y">{{y}}</mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" style="max-width:145px">
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width:150px">
           <mat-label>Month</mat-label>
           <mat-select formControlName="month" (selectionChange)="loadAll()">
-            <mat-option [value]="null">All Months</mat-option>
+            <mat-option value="">All Months</mat-option>
             <mat-option *ngFor="let m of months" [value]="m.value">{{m.label}}</mat-option>
           </mat-select>
         </mat-form-field>
@@ -59,14 +70,20 @@ import { StockDistributionDialogComponent } from './stock-distribution-dialog/st
               <mat-card-header><mat-card-title>Monthly Booking Revenue</mat-card-title></mat-card-header>
               <mat-card-content style="padding:16px">
                 <canvas *ngIf="revenueChart.labels?.length" baseChart [data]="revenueChart" [options]="revenueBarOpts" type="bar" style="max-height:280px"></canvas>
-                <div *ngIf="!revenueChart.labels?.length" class="no-data">Loading…</div>
+                <div *ngIf="!revenueChart.labels?.length" class="no-data">
+                  <mat-icon color="disabled" style="font-size:40px; height:40px; width:40px; margin-bottom:8px;">query_stats</mat-icon><br>
+                  No booking revenue data found
+                </div>
               </mat-card-content>
             </mat-card>
             <mat-card>
               <mat-card-header><mat-card-title>Monthly Booking Count</mat-card-title></mat-card-header>
               <mat-card-content style="padding:16px">
                 <canvas *ngIf="bookingsCountChart.labels?.length" baseChart [data]="bookingsCountChart" [options]="revenueBarOpts" type="bar" style="max-height:280px"></canvas>
-                <div *ngIf="!bookingsCountChart.labels?.length" class="no-data">Loading…</div>
+                <div *ngIf="!bookingsCountChart.labels?.length" class="no-data">
+                  <mat-icon color="disabled" style="font-size:40px; height:40px; width:40px; margin-bottom:8px;">analytics</mat-icon><br>
+                  No booking volume data found
+                </div>
               </mat-card-content>
             </mat-card>
           </div>
@@ -137,7 +154,7 @@ import { StockDistributionDialogComponent } from './stock-distribution-dialog/st
               <mat-card-header><mat-card-title>Vehicle Stock by Status</mat-card-title></mat-card-header>
               <mat-card-content style="padding:16px">
                 <canvas *ngIf="inventoryChart.labels?.length" baseChart [data]="inventoryChart" [options]="pieOpts" type="doughnut" style="max-height:280px"></canvas>
-                <div *ngIf="!inventoryChart.labels?.length" class="no-data">Loading…</div>
+                <div *ngIf="!inventoryChart.labels?.length" class="no-data">No inventory data found</div>
               </mat-card-content>
             </mat-card>
             <mat-card>
@@ -256,6 +273,7 @@ export class ReportsComponent implements OnInit {
     { value: 7, label: 'July' }, { value: 8, label: 'August' }, { value: 9, label: 'September' },
     { value: 10, label: 'October' }, { value: 11, label: 'November' }, { value: 12, label: 'December' }
   ];
+  dealers: any[] = [];
 
   kpiCards: { label: string; value: string; icon: string }[] = [];
 
@@ -301,11 +319,20 @@ export class ReportsComponent implements OnInit {
   hBarOpts: ChartOptions = { indexAxis: 'y' as const, responsive: true, plugins: { legend: { display: false } } };
   pieOpts: ChartOptions = { responsive: true, plugins: { legend: { position: 'right' } } };
 
-  constructor(private api: ApiService, private fb: FormBuilder, private dialog: MatDialog) {
-    this.filterForm = this.fb.group({ year: [null], month: [null] });
+  constructor(private api: ApiService, public auth: AuthService, private fb: FormBuilder, private dialog: MatDialog) {
+    this.filterForm = this.fb.group({ 
+      year: [''], 
+      month: [''], 
+      dealerId: [''] 
+    });
   }
 
-  ngOnInit() { this.loadAll(); }
+  ngOnInit() { 
+    if (this.auth.isSuperAdmin) {
+      this.api.getDealers().subscribe(d => this.dealers = d);
+    }
+    this.loadAll(); 
+  }
 
   openStockDialog() {
     this.dialog.open(StockDistributionDialogComponent, {
@@ -325,98 +352,128 @@ export class ReportsComponent implements OnInit {
   }
 
   loadAll() {
-    const { year, month } = this.filterForm.value;
-    this.loadSales(year, month);
-    this.loadInventory(year, month);
-    this.loadLeads(year, month);
-    this.loadService(year, month);
+    const { year, month, dealerId } = this.filterForm.value;
+    const vYear = year || undefined;
+    const vMonth = month || undefined;
+    const vDealer = dealerId || undefined;
+
+    this.loadSales(vYear, vMonth, vDealer);
+    this.loadInventory(vYear, vMonth, vDealer);
+    this.loadLeads(vYear, vMonth, vDealer);
+    this.loadService(vYear, vMonth, vDealer);
   }
 
-  loadSales(year: number | null, month: number | null) {
-    this.api.getMonthlyBookings(year ?? undefined).subscribe((d: any[]) => {
-      const sorted = [...d].reverse(); // chronological
-      this.revenueChart = {
-        labels: sorted.map(r => r[0]),
-        datasets: [{ data: sorted.map(r => Number(r[2])), label: 'Revenue (₹)', backgroundColor: '#002c5f', borderRadius: 4 }]
-      };
-      this.bookingsCountChart = {
-        labels: sorted.map(r => r[0]),
-        datasets: [{ data: sorted.map(r => Number(r[1])), label: 'Bookings', backgroundColor: '#00aad2', borderRadius: 4 }]
-      };
+  loadSales(year: number | undefined, month: number | undefined, dealerId: number | undefined) {
+    this.api.getMonthlyBookings(year, dealerId).subscribe({
+      next: (d: any[]) => {
+        const sorted = [...d].reverse(); // chronological
+        this.revenueChart = {
+          labels: sorted.map(r => r[0]),
+          datasets: [{ data: sorted.map(r => Number(r[2])), label: 'Revenue (₹)', backgroundColor: '#002c5f', borderRadius: 4 }]
+        };
+        this.bookingsCountChart = {
+          labels: sorted.map(r => r[0]),
+          datasets: [{ data: sorted.map(r => Number(r[1])), label: 'Bookings', backgroundColor: '#00aad2', borderRadius: 4 }]
+        };
 
-      // KPI Calculation with Month Filtering
-      let filteredSalesData = d;
-      if (year && month) {
-        const monthStr = `${year}-${month.toString().padStart(2, '0')}`;
-        filteredSalesData = d.filter(r => r[0] === monthStr);
-      }
+        // KPI Calculation with Month Filtering
+        let filteredSalesData = d;
+        if (year && month) {
+          const monthStr = `${year}-${month.toString().padStart(2, '0')}`;
+          filteredSalesData = d.filter(r => r[0] === monthStr);
+        }
 
-      const totalRev = filteredSalesData.reduce((s, r) => s + Number(r[2]), 0);
-      const totalBkgs = filteredSalesData.reduce((s, r) => s + Number(r[1]), 0);
-      this.updateKpi('Total Bookings', String(totalBkgs), 'receipt_long', 0);
-      this.updateKpi('Total Revenue', '₹' + (totalRev / 100000).toFixed(1) + 'L', 'currency_rupee', 1);
+        const totalRev = filteredSalesData.reduce((s, r) => s + Number(r[2]), 0);
+        const totalBkgs = filteredSalesData.reduce((s, r) => s + Number(r[1]), 0);
+        this.updateKpi('Total Bookings', String(totalBkgs), 'receipt_long', 0);
+        this.updateKpi('Total Revenue', '₹' + (totalRev / 100000).toFixed(1) + 'L', 'currency_rupee', 1);
 
-      this.detailedSalesRows = filteredSalesData.map(r => ({
-        month: r[0],
-        volume: r[1],
-        revenue: r[2]
-      }));
+        this.detailedSalesRows = filteredSalesData.map(r => ({
+          month: r[0],
+          volume: r[1],
+          revenue: r[2]
+        }));
+      },
+      error: err => console.error('Error loading monthly bookings:', err)
     });
 
-    this.api.getTopSellingModels(year ?? undefined, month ?? undefined).subscribe((d: any[]) => {
-      this.topModelsChart = {
-        labels: d.map(r => r[0]),
-        datasets: [{ data: d.map(r => Number(r[1])), label: 'Bookings', backgroundColor: '#00aad2', borderRadius: 4 }]
-      };
-      this.topModelRows = d.map(r => ({ model: r[0], bookings: r[1], revenue: r[2] }));
+    this.api.getTopSellingModels(year, month, dealerId).subscribe({
+      next: (d: any[]) => {
+        this.topModelsChart = {
+          labels: d.map(r => r[0]),
+          datasets: [{ data: d.map(r => Number(r[1])), label: 'Bookings', backgroundColor: '#00aad2', borderRadius: 4 }]
+        };
+        this.topModelRows = d.map(r => ({ model: r[0], bookings: r[1], revenue: r[2] }));
+      },
+      error: err => console.error('Error loading top selling models:', err)
     });
 
-    this.api.getBookingsByModel(year ?? undefined, month ?? undefined).subscribe((d: any[]) => {
-      this.bookingsByModelChart = {
-        labels: d.map(r => r[0]),
-        datasets: [{ data: d.map(r => Number(r[1])), label: 'Bookings', backgroundColor: '#002c5f', borderRadius: 4 }]
-      };
-    });
-  }
-
-  loadInventory(year: number | null, month: number | null) {
-    this.api.getInventoryStatus(year ?? undefined, month ?? undefined).subscribe((d: any[]) => {
-      this.inventoryChart = {
-        labels: d.map(r => r[0]),
-        datasets: [{ data: d.map(r => Number(r[1])), backgroundColor: ['#2e7d32', '#1565c0', '#e65100', '#6a1b9a', '#c62828'] }]
-      };
-      this.inventoryRows = d.map(r => ({ status: r[0], count: r[1], value: r[2] }));
-      const inStock = d.find(r => r[0] === 'IN_STOCK');
-      this.updateKpi('In Stock', String(inStock ? inStock[1] : 0), 'directions_car', 2);
-    });
-
-    this.api.getStockByModel(year ?? undefined, month ?? undefined).subscribe((d: any[]) => {
-      this.stockByModelChart = {
-        labels: d.map(r => r[0]),
-        datasets: [{ data: d.map(r => Number(r[1])), label: 'In Stock Units', backgroundColor: '#00aad2', borderRadius: 4 }]
-      };
+    this.api.getBookingsByModel(year, month, dealerId).subscribe({
+      next: (d: any[]) => {
+        this.bookingsByModelChart = {
+          labels: d.map(r => r[0]),
+          datasets: [{ data: d.map(r => Number(r[1])), label: 'Bookings', backgroundColor: '#002c5f', borderRadius: 4 }]
+        };
+      },
+      error: err => console.error('Error loading bookings by model:', err)
     });
   }
 
-  loadLeads(year: number | null, month: number | null) {
-    this.api.getSalesPipeline(year ?? undefined, month ?? undefined).subscribe((d: any[]) => {
-      this.pipelineChart = {
-        labels: d.map(r => r[0]),
-        datasets: [{ data: d.map(r => Number(r[1])), label: 'Leads', backgroundColor: '#004080', borderRadius: 4 }]
-      };
-      this.pipelineRows = d.map(r => ({ stage: r[0], count: r[1] }));
-      const total = d.reduce((s, r) => s + Number(r[1]), 0);
-      this.updateKpi('Active Leads', String(total), 'trending_up', 3);
+  loadInventory(year: number | undefined, month: number | undefined, dealerId: number | undefined) {
+    this.api.getInventoryStatus(year, month, dealerId).subscribe({
+      next: (d: any[]) => {
+        this.inventoryChart = {
+          labels: d.map(r => r[0]),
+          datasets: [{ data: d.map(r => Number(r[1])), backgroundColor: ['#2e7d32', '#1565c0', '#e65100', '#6a1b9a', '#c62828'] }]
+        };
+        this.inventoryRows = d.map(r => ({ status: r[0], count: r[1], value: r[2] }));
+        const inStock = d.find(r => r[0] === 'IN_STOCK');
+        this.updateKpi('In Stock', String(inStock ? inStock[1] : 0), 'directions_car', 2);
+      },
+      error: err => console.error('Error loading inventory status:', err)
+    });
+
+    this.api.getStockByModel(year, month, dealerId).subscribe({
+      next: (d: any[]) => {
+        this.stockByModelChart = {
+          labels: d.map(r => r[0]),
+          datasets: [{ data: d.map(r => Number(r[1])), label: 'In Stock Units', backgroundColor: '#00aad2', borderRadius: 4 }]
+        };
+      },
+      error: err => console.error('Error loading stock by model:', err)
     });
   }
 
-  loadService(year: number | null, month: number | null) {
-    this.api.getServiceWorkload(year ?? undefined, month ?? undefined).subscribe((d: any[]) => {
-      this.workloadChart = {
-        labels: d.map(r => r[0]),
-        datasets: [{ data: d.map(r => Number(r[1])), label: 'Total Jobs', backgroundColor: '#00796b', borderRadius: 4 }]
-      };
-      this.workloadRows = d.map(r => ({ mechanic: r[0], jobs: r[1], completed: r[2], revenue: r[3] }));
+  loadLeads(year: number | undefined, month: number | undefined, dealerId: number | undefined) {
+    this.api.getSalesPipeline(year, month, dealerId).subscribe({
+      next: (d: any[]) => {
+        this.pipelineChart = {
+          labels: d.map(r => r[0]),
+          datasets: [{ data: d.map(r => Number(r[1])), label: 'Leads', backgroundColor: '#004080', borderRadius: 4 }]
+        };
+        this.pipelineRows = d.map(r => ({ stage: r[0], count: r[1] }));
+        const total = d.reduce((s, r) => s + Number(r[1]), 0);
+        this.updateKpi('Active Leads', String(total), 'trending_up', 3);
+      },
+      error: err => console.error('Error loading sales pipeline:', err)
+    });
+  }
+
+  loadService(year: number | undefined, month: number | undefined, dealerId: number | undefined) {
+    this.api.getServiceWorkload(year, month, dealerId).subscribe({
+      next: (d: any[]) => {
+        this.workloadChart = {
+          labels: d.map(r => r[0]),
+          datasets: [{ data: d.map(r => Number(r[1])), label: 'Total Jobs', backgroundColor: '#00796b', borderRadius: 4 }]
+        };
+        this.workloadRows = d.map(r => ({
+          mechanic: r[0],
+          jobs: r[1],
+          completed: r[2],
+          revenue: r[3]
+        }));
+      },
+      error: err => console.error('Error loading service workload:', err)
     });
   }
 

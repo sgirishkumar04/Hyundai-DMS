@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 
 interface NavItem {
@@ -15,6 +15,10 @@ interface NavItem {
   selector: 'app-sidebar',
   template: `
     <div class="sidebar-container" [class.collapsed]="collapsed">
+      <!-- Mobile Close Button (shown only when drawer is open on mobile) -->
+      <button class="mobile-close-btn" (click)="closeDrawer.emit()">
+        <mat-icon>close</mat-icon>
+      </button>
 
       <!-- Logo -->
       <div class="sidebar-logo">
@@ -34,7 +38,8 @@ interface NavItem {
              routerLinkActive="active"
              [routerLinkActiveOptions]="{exact: !!item.exact}"
              [matTooltip]="collapsed ? item.label : ''"
-             matTooltipPosition="right">
+             matTooltipPosition="right"
+             (click)="onNavItemClick()">
             <mat-icon>{{item.icon}}</mat-icon>
             <span class="nav-text" *ngIf="!collapsed">{{item.label}}</span>
           </a>
@@ -58,6 +63,7 @@ interface NavItem {
 })
 export class SidebarComponent implements OnInit {
   @Input() collapsed = false;
+  @Output() closeDrawer = new EventEmitter<void>();
 
   // Roles use short names (no ROLE_ prefix) — matched against auth.role which also has no prefix
   navItems: NavItem[] = [
@@ -66,6 +72,7 @@ export class SidebarComponent implements OnInit {
     // Super Admin Section
     { section: 'Platform Admin',   label: 'Dealer Management', icon: 'admin_panel_settings', route: '/super-admin', roles: ['SUPER_ADMIN'], exact: true },
     {                              label: 'Network Overview',  icon: 'insights',        route: '/super-admin/reports', roles: ['SUPER_ADMIN'] },
+    {                              label: 'Audit Logs',        icon: 'history_edu',     route: '/super-admin/audit-logs', roles: ['SUPER_ADMIN'] },
 
     { section: 'Sales Operations', label: 'Vehicle Inventory', icon: 'directions_car',  route: '/inventory',  roles: ['ADMIN','SALES_MANAGER','SALES_EXECUTIVE','INVENTORY_MANAGER'], permission: 'INVENTORY_VIEW' },
     {                              label: 'Customers',         icon: 'people',          route: '/customers',  roles: ['ADMIN','SALES_MANAGER','SALES_EXECUTIVE'],                     permission: 'SALES_VIEW' },
@@ -73,40 +80,32 @@ export class SidebarComponent implements OnInit {
     {                              label: 'Sales',             icon: 'shopping_cart',   route: '/sales',      roles: ['ADMIN','SALES_MANAGER','SALES_EXECUTIVE','ACCOUNTS'],          permission: 'SALES_VIEW' },
     { section: 'Service',          label: 'Service Center',    icon: 'build_circle',    route: '/service',    roles: ['ADMIN','SERVICE_ADVISOR','MECHANIC'],                          permission: 'SERVICE_VIEW' },
     {                              label: 'Spare Parts',       icon: 'settings',        route: '/parts',      roles: ['ADMIN','SERVICE_ADVISOR','MECHANIC','INVENTORY_MANAGER'],      permission: 'PARTS_VIEW' },
-    { section: 'Admin',            label: 'Employees',         icon: 'badge',           route: '/employees',  roles: ['ADMIN','SALES_MANAGER'],                                       permission: 'EMPLOYEES_VIEW' },
+    { section: 'Admin',            label: 'Employees',         icon: 'badge',           route: '/employees',  roles: ['ADMIN','SALES_MANAGER'],                                       permission: 'EMPLOYEES_VIEW', exact: true },
     {                              label: 'Role Permissions',  icon: 'security',        route: '/employees/roles', roles: ['ADMIN'] },
-    {                              label: 'Reports',           icon: 'bar_chart',       route: '/reports',    roles: ['ADMIN','SALES_MANAGER','SALES_EXECUTIVE','ACCOUNTS'],          permission: 'REPORTS_VIEW' },
+    {                              label: 'Reports',           icon: 'bar_chart',       route: '/reports',    roles: ['ADMIN','SALES_MANAGER','SALES_EXECUTIVE','ACCOUNTS','SUPER_ADMIN'], permission: 'REPORTS_VIEW' },
   ];
 
   constructor(public auth: AuthService) {}
   ngOnInit() {}
 
-  visibleNavItems(): NavItem[] {
-    // Normalize role: strip ROLE_ prefix if present (handles both ADMIN and ROLE_ADMIN formats)
-    const role = (this.auth.role ?? '').replace('ROLE_', '');
+  onNavItemClick() {
+    this.closeDrawer.emit();
+  }
 
+  visibleNavItems(): NavItem[] {
+    const role = (this.auth.role ?? '').replace('ROLE_', '');
     const shownSections = new Set<string>();
     return this.navItems
       .filter(item => {
-        // If it's the dashboard, allow all logged in users (except maybe Super Admin if you want to hide it)
         if (item.route === '/dashboard') return !this.auth.isSuperAdmin;
-        
-        // Super Admin only sees their specific items
         if (this.auth.isSuperAdmin) {
           return item.roles?.includes('SUPER_ADMIN') ?? false;
         }
-
-        // Regular users hide Super Admin items
-        if (item.roles?.includes('SUPER_ADMIN')) return false;
-
-        // Check if user has the specific permission (Dynamic)
+        if (item.roles?.includes('SUPER_ADMIN') && item.roles.length === 1) return false;
         if (item.permission && this.auth.hasPermission(item.permission)) return true;
-
-        // Fallback to role-based check (Legacy/Hardcoded)
         return item.roles?.includes(role) ?? false;
       })
       .map(item => {
-        // Only show section label the first time it appears
         if (item.section) {
           if (shownSections.has(item.section)) {
             return { ...item, section: undefined };

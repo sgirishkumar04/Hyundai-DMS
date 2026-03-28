@@ -29,8 +29,12 @@ import { AuthService } from '../../core/services/auth.service';
           <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
             <mat-label>Search parts...</mat-label>
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
-            <input matInput (keyup)="applySearch($event)" placeholder="Part #, name, or category...">
+            <input matInput #searchInput (keyup)="applySearch($event)" placeholder="Part #, name, or category...">
           </mat-form-field>
+
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
 
           <mat-form-field appearance="outline" style="max-width:200px" subscriptSizing="dynamic">
             <mat-label>Category</mat-label>
@@ -121,6 +125,7 @@ import { AuthService } from '../../core/services/auth.service';
 export class PartsListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('searchInput') searchInput!: any;
 
   displayedColumns = ['partNumber', 'name', 'price', 'supplier', 'status', 'actions'];
   dataSource = new MatTableDataSource<any>([]);
@@ -128,6 +133,13 @@ export class PartsListComponent implements OnInit {
   categories: string[] = ['Brakes', 'Engine', 'Consumables', 'Electrical', 'Body', 'Transmission', 'Accessories'];
   categoryFilter = '';
   searchQuery = '';
+
+  resetFilters() {
+    this.searchQuery = '';
+    this.categoryFilter = '';
+    if (this.searchInput) this.searchInput.nativeElement.value = '';
+    this.load();
+  }
 
   constructor(private api: ApiService, private snack: MatSnackBar, private dialog: MatDialog, public auth: AuthService) {}
 

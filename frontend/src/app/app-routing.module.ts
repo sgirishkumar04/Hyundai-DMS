@@ -30,7 +30,7 @@ const routes: Routes = [
       { path: 'finance',    loadChildren: () => import('./features/finance/finance.module').then(m => m.FinanceModule),
         canActivate: [RoleGuard], data: { roles: ['ADMIN', 'ACCOUNTS', 'SALES_MANAGER'] } },
       { path: 'reports',    loadChildren: () => import('./features/reports/reports.module').then(m => m.ReportsModule),
-        canActivate: [RoleGuard], data: { roles: ['ADMIN', 'SALES_MANAGER', 'SALES_EXECUTIVE', 'ACCOUNTS'], permission: 'REPORTS_VIEW' } },
+        canActivate: [RoleGuard], data: { roles: ['ADMIN', 'SALES_MANAGER', 'SALES_EXECUTIVE', 'ACCOUNTS', 'SUPER_ADMIN'], permission: 'REPORTS_VIEW' } },
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

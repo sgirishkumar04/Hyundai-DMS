@@ -4,13 +4,14 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Set;
 import java.util.HashSet;
 
 @Entity
 @Table(name = "roles")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Role {
@@ -18,9 +19,11 @@ public class Role {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @JsonProperty("name")
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
+    @JsonProperty("description")
     private String description;
 
     @Builder.Default
@@ -34,5 +37,6 @@ public class Role {
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
+    @JsonProperty("permissions")
     private Set<Permission> permissions = new HashSet<>();
 }

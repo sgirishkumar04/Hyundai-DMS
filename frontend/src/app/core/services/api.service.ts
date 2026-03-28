@@ -23,7 +23,7 @@ export class ApiService {
   login(email: string, password: string) { return this.http.post<any>(`${this.base}/auth/login`, { email, password }); }
 
   // ── Lookup & Admin ───────────────────────────────────────
-  getRoles(): Observable<Role[]>                      { return this.http.get<Role[]>(`${this.base}/lookup/roles`); }
+  getRoles(): Observable<Role[]>                      { return this.http.get<Role[]>(`${this.base}/lookup/roles?t=${Date.now()}`); }
   getPermissions(): Observable<any[]>                 { return this.http.get<any[]>(`${this.base}/roles/permissions`); }
   updateRolePermissions(roleId: number, permissionIds: number[]): Observable<Role> {
     return this.http.put<Role>(`${this.base}/roles/${roleId}/permissions`, permissionIds);
@@ -40,6 +40,7 @@ export class ApiService {
   getLeadSources(): Observable<LeadSource[]>          { return this.http.get<LeadSource[]>(`${this.base}/lookup/lead-sources`); }
   getSuppliers(): Observable<Supplier[]>              { return this.http.get<Supplier[]>(`${this.base}/lookup/suppliers`); }
   getBanks(): Observable<Bank[]>                      { return this.http.get<Bank[]>(`${this.base}/lookup/banks`); }
+  getDealers(): Observable<any[]>                     { return this.http.get<any[]>(`${this.base}/dealers`); }
 
   // ── Employees ─────────────────────────────────────────────────
   getEmployees(params: any): Observable<Page<Employee>> {
@@ -49,6 +50,7 @@ export class ApiService {
   createEmployee(data: any): Observable<Employee>     { return this.http.post<Employee>(`${this.base}/employees`, data); }
   updateEmployee(id: number, data: any): Observable<Employee> { return this.http.put<Employee>(`${this.base}/employees/${id}`, data); }
   deleteEmployee(id: number): Observable<void>        { return this.http.delete<void>(`${this.base}/employees/${id}`); }
+  unlockEmployee(id: number): Observable<void>        { return this.http.post<void>(`${this.base}/employees/${id}/unlock`, {}); }
   getMe(): Observable<Employee>                       { return this.http.get<Employee>(`${this.base}/employees/me`); }
 
   // ── Vehicles ──────────────────────────────────────────────────
@@ -119,34 +121,35 @@ export class ApiService {
   }
 
   // ── Reports ──────────────────────────────────────────────────
-  getMonthlyBookings(year?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/monthly-bookings`, { params: this.buildParams(year, undefined) });
+  getMonthlyBookings(year?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/monthly-bookings`, { params: this.buildParams(year, undefined, dealerId) });
   }
-  getTopSellingModels(year?: number, month?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/top-selling-models`, { params: this.buildParams(year, month) });
+  getTopSellingModels(year?: number, month?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/top-selling-models`, { params: this.buildParams(year, month, dealerId) });
   }
-  getSalesPipeline(year?: number, month?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/sales-pipeline`, { params: this.buildParams(year, month) });
+  getSalesPipeline(year?: number, month?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/sales-pipeline`, { params: this.buildParams(year, month, dealerId) });
   }
-  getInventoryStatus(year?: number, month?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/inventory-status`, { params: this.buildParams(year, month) });
+  getInventoryStatus(year?: number, month?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/inventory-status`, { params: this.buildParams(year, month, dealerId) });
   }
-  getServiceWorkload(year?: number, month?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/service-workload`, { params: this.buildParams(year, month) });
-  }
-
-  getStockByModel(year?: number, month?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/stock-by-model`, { params: this.buildParams(year, month) });
+  getServiceWorkload(year?: number, month?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/service-workload`, { params: this.buildParams(year, month, dealerId) });
   }
 
-  getBookingsByModel(year?: number, month?: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/reports/bookings-by-model`, { params: this.buildParams(year, month) });
+  getStockByModel(year?: number, month?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/stock-by-model`, { params: this.buildParams(year, month, dealerId) });
   }
 
-  private buildParams(year?: number, month?: number): any {
+  getBookingsByModel(year?: number, month?: number, dealerId?: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/reports/bookings-by-model`, { params: this.buildParams(year, month, dealerId) });
+  }
+
+  private buildParams(year?: number, month?: number, dealerId?: number): any {
     const params: any = {};
     if (year) params.year = year;
     if (month) params.month = month;
+    if (dealerId) params.dealerId = dealerId;
     return params;
   }
 }

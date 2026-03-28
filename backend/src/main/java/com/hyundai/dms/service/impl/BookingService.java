@@ -1,16 +1,18 @@
 package com.hyundai.dms.service.impl;
 
 import com.hyundai.dms.security.DealerContext;
-
 import com.hyundai.dms.dto.request.BookingRequest;
 import com.hyundai.dms.entity.*;
 import com.hyundai.dms.exception.ResourceNotFoundException;
 import com.hyundai.dms.repository.*;
+import com.hyundai.dms.service.AuditService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 
@@ -23,9 +25,12 @@ public class BookingService {
     private final EmployeeRepository employeeRepo;
     private final VehicleRepository vehicleRepo;
     private final DealerRepository dealerRepo;
+    private final AuditService auditService;
+    private final ObjectMapper objectMapper;
+    private final JdbcTemplate jdbc;
 
     public Page<Booking> getAll(String search, Pageable pageable) {
-                Long dealerId = DealerContext.getCurrentDealerId();
+        Long dealerId = DealerContext.getCurrentDealerId();
         if (search != null && !search.trim().isEmpty()) {
             return bookingRepo.search(search, dealerId, pageable);
         }
@@ -33,7 +38,7 @@ public class BookingService {
     }
 
     public Booking getById(Long id) {
-                Long dealerId = DealerContext.getCurrentDealerId();
+        Long dealerId = DealerContext.getCurrentDealerId();
         return bookingRepo.findById(id)
             .filter(b -> b.getDealer().getId().equals(dealerId))
             .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
@@ -41,7 +46,7 @@ public class BookingService {
 
     @Transactional
     public Booking create(BookingRequest req) {
-                Long dealerId = DealerContext.getCurrentDealerId();
+        Long dealerId = DealerContext.getCurrentDealerId();
         Dealer dealer = dealerRepo.findById(dealerId)
             .orElseThrow(() -> new ResourceNotFoundException("Dealer not found"));
 
@@ -51,7 +56,6 @@ public class BookingService {
                 .filter(c -> c.getDealer().getId().equals(dealerId))
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         } else {
-            // Provision new customer for Guest booking
             customer = Customer.builder()
                 .customerCode("CUST" + System.currentTimeMillis() % 1000000)
                 .firstName(req.getCustomerName())
@@ -91,15 +95,51 @@ public class BookingService {
             .updatedAt(LocalDateTime.now())
             .build();
 
-        // Update vehicle status
         vehicle.setStatus(Vehicle.VehicleStatus.ALLOCATED);
         vehicleRepo.save(vehicle);
 
-        return bookingRepo.save(booking);
+        Booking savedBooking = bookingRepo.save(booking);
+        auditService.log("Booking", savedBooking.getId(), "CREATE", null, savedBooking);
+        return savedBooking;
+    }
+
+    @Transactional
+    public Booking updateStatus(Long id, Booking.BookingStatus status) {
+        Booking booking = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(booking);
+        } catch (Exception e) {
+            // Log and continue
+        }
+
+        booking.setStatus(status);
+        booking.setUpdatedAt(LocalDateTime.now());
+        Booking savedBooking = bookingRepo.save(booking);
+        auditService.log("Booking", savedBooking.getId(), "UPDATE", oldJson, savedBooking);
+        return savedBooking;
     }
 
     @Transactional
     public void delete(Long id) {
+        Booking booking = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(booking);
+        } catch (Exception e) {}
+
+        // 1. Un-allocate vehicle if associated
+        if (booking.getVehicle() != null) {
+            jdbc.update("UPDATE vehicles SET status = 'IN_STOCK' WHERE id = ?", booking.getVehicle().getId());
+        }
+
+        // 2. Delete dependent records
+        jdbc.update("DELETE FROM finance_loans WHERE booking_id = ?", id);
+        jdbc.update("DELETE FROM invoices WHERE booking_id = ?", id);
+        
+        // 3. Delete the booking
         bookingRepo.deleteById(id);
+        
+        auditService.log("Booking", id, "DELETE", oldJson, null);
     }
 }

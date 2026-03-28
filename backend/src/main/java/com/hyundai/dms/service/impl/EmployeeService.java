@@ -12,6 +12,7 @@ import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.hyundai.dms.util.PasswordValidator;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class EmployeeService {
 
     public Page<Employee> getAll(String search, Pageable pageable) {
         Long dealerId = DealerContext.getCurrentDealerId();
-        return employeeRepo.searchActive(search, dealerId, pageable);
+        return employeeRepo.searchAll(search, dealerId, pageable);
     }
 
     public Employee getById(Long id) {
@@ -44,6 +45,10 @@ public class EmployeeService {
         
         if (req.getPassword() == null || req.getPassword().isBlank()) {
             throw new IllegalArgumentException("Password is required for new employees");
+        }
+        
+        if (!PasswordValidator.isValid(req.getPassword())) {
+            throw new IllegalArgumentException(PasswordValidator.getRequirementsMessage());
         }
         
         String employeeCode = generateNextEmployeeCode(dealerId);
@@ -93,6 +98,9 @@ public class EmployeeService {
         emp.setPhone(req.getPhone());
         
         if (req.getPassword() != null && !req.getPassword().isBlank()) {
+            if (!PasswordValidator.isValid(req.getPassword())) {
+                throw new IllegalArgumentException(PasswordValidator.getRequirementsMessage());
+            }
             emp.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         }
         
@@ -137,5 +145,13 @@ public class EmployeeService {
         }
         
         employeeRepo.save(target);
+    }
+
+    @Transactional
+    public void unlock(Long id) {
+        Employee emp = getById(id);
+        emp.setFailedLoginAttempts(0);
+        emp.setIsLocked(false);
+        employeeRepo.save(emp);
     }
 }

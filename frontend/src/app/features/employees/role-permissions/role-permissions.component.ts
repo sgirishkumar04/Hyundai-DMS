@@ -18,15 +18,15 @@ import { AuthService } from '../../../core/services/auth.service';
         <!-- Left Pane: Roles List -->
         <mat-card class="role-list-card">
           <mat-card-header>
-            <mat-card-title>System Roles</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
+          <mat-card-title>System Roles</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
             <mat-nav-list>
               <a mat-list-item *ngFor="let r of roles"
                  [class.selected]="selectedRole?.id === r.id"
                  (click)="selectRole(r)">
-                <span matListItemTitle>{{r.name.replace('ROLE_', '')}}</span>
-                <span matListItemLine class="text-xs text-secondary">{{r.description}}</span>
+                <span matListItemTitle>{{(r.name || '').replace('ROLE_', '')}}</span>
+                <span matListItemLine class="text-xs text-secondary">{{r.description || 'No description available'}}</span>
               </a>
             </mat-nav-list>
           </mat-card-content>
@@ -47,9 +47,9 @@ import { AuthService } from '../../../core/services/auth.service';
               <div class="module-block" *ngFor="let group of groupedPermissions | keyvalue">
                 <h3 class="module-title">{{group.key}} Module</h3>
                 <div class="checkbox-grid">
-                  <mat-checkbox *ngFor="let p of group.value"
+                  <mat-checkbox *ngFor="let p of group.value; trackBy: trackByPermission"
                                 [checked]="hasPermission(p.id)"
-                                (change)="togglePermission(p.id, $event.checked)">
+                                (change)="togglePermission(p.id)">
                     <div style="font-weight:500">{{formatPermName(p.name)}}</div>
                     <div class="text-xs text-secondary">{{p.description}}</div>
                   </mat-checkbox>
@@ -97,12 +97,25 @@ export class RolePermissionsComponent implements OnInit {
   constructor(private api: ApiService, private snack: MatSnackBar, public auth: AuthService) {}
 
   ngOnInit() {
-    this.api.getRoles().subscribe(res => {
-      this.roles = res || [];
+    this.api.getRoles().subscribe({
+      next: (res) => {
+        console.log('Role Permissions Received:', res);
+        this.roles = (res || []).filter(r => 
+          r.name !== 'ROLE_SUPER_ADMIN' && 
+          r.name !== 'ROLE_ADMIN' &&
+          r.name !== 'SUPER_ADMIN' &&
+          r.name !== 'ADMIN'
+        );
+      },
+      error: (err) => console.error('Failed to fetch roles:', err)
     });
-    this.api.getPermissions().subscribe(res => {
-      this.allPermissions = res || [];
-      this.groupPermissions();
+
+    this.api.getPermissions().subscribe({
+      next: (res) => {
+        this.allPermissions = res || [];
+        this.groupPermissions();
+      },
+      error: (err) => console.error('Failed to fetch permissions:', err)
     });
   }
 
@@ -119,19 +132,34 @@ export class RolePermissionsComponent implements OnInit {
 
   selectRole(role: any) {
     this.selectedRole = role;
-    this.activePermissionIds.clear();
-    if (role.permissions) {
-      role.permissions.forEach((p: any) => this.activePermissionIds.add(p.id));
+    this.rebuildActivePermissionSet(role);
+  }
+
+  private rebuildActivePermissionSet(role: any) {
+    const newSet = new Set<number>();
+    if (role && role.permissions) {
+      role.permissions.forEach((p: any) => newSet.add(Number(p.id)));
     }
+    this.activePermissionIds = newSet;
   }
 
   hasPermission(permId: number): boolean {
-    return this.activePermissionIds.has(permId);
+    return this.activePermissionIds.has(Number(permId));
   }
 
-  togglePermission(permId: number, isChecked: boolean) {
-    if (isChecked) this.activePermissionIds.add(permId);
-    else this.activePermissionIds.delete(permId);
+  togglePermission(permissionId: any) {
+    const id = Number(permissionId);
+    const newSet = new Set(this.activePermissionIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    this.activePermissionIds = newSet;
+  }
+
+  trackByPermission(index: number, item: any): number {
+    return Number(item.id);
   }
 
   formatPermName(name: string): string {
@@ -153,7 +181,7 @@ export class RolePermissionsComponent implements OnInit {
         const idx = this.roles.findIndex(r => r.id === updatedRole.id);
         if(idx !== -1) {
           this.roles[idx] = updatedRole;
-          this.selectedRole = updatedRole;
+          this.selectRole(updatedRole);
         }
 
         // If the admin modified their own role's permissions, refresh their session dynamically.

@@ -28,6 +28,9 @@ import { Router } from '@angular/router';
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
             <input #searchInput matInput (keyup)="applyFilter($event)" placeholder="Appointment no, reg no, customer…">
           </mat-form-field>
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="margin-right: 8px; color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
           <mat-form-field appearance="outline" style="max-width:200px">
             <mat-label>Service Type</mat-label>
             <mat-select [(value)]="typeFilter" (selectionChange)="applyTypeFilter()">
@@ -135,6 +138,13 @@ export class ServiceListComponent implements OnInit {
   loading = false;
   typeFilter = '';
   statusFilter = '';
+
+  resetFilters() {
+    this.typeFilter = '';
+    this.statusFilter = '';
+    if (this.searchInput) this.searchInput.nativeElement.value = '';
+    this.updateFilter();
+  }
 
   constructor(private api: ApiService, private snack: MatSnackBar, public router: Router) {}
 

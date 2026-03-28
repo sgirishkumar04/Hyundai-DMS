@@ -68,9 +68,18 @@ public class Employee {
     private LocalDateTime deactivatedAt;
 
     @Builder.Default
+    @Column(name = "failed_login_attempts")
+    private Integer failedLoginAttempts = 0;
+
+    @Builder.Default
+    @Column(name = "is_locked")
+    private Boolean isLocked = false;
+
+    @Builder.Default
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 

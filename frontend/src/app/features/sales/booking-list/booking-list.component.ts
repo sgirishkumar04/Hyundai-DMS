@@ -30,8 +30,11 @@ import { AuthService } from '../../../core/services/auth.service';
           <mat-form-field appearance="outline" class="search-field">
             <mat-label>Search bookings…</mat-label>
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
-            <input matInput (keyup)="applyFilter($event)" placeholder="Booking #, customer name…">
+            <input matInput #searchInput (keyup)="applyFilter($event)" placeholder="Booking #, customer name…">
           </mat-form-field>
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="margin-left: 8px; color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
 
           <mat-form-field appearance="outline" style="max-width:180px; margin-left:12px">
             <mat-label>Status</mat-label>
@@ -156,6 +159,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class BookingListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('searchInput') searchInput!: any;
 
   columns = ['bookingNumber', 'date', 'customer', 'vehicle', 'executive', 'amount', 'status', 'actions'];
   dataSource = new MatTableDataSource<any>([]);
@@ -166,6 +170,15 @@ export class BookingListComponent implements OnInit {
   modelFilter: number | '' = '';
   execs: any[] = [];
   models: any[] = [];
+
+  resetFilters() {
+    this.searchText = '';
+    this.statusFilter = '';
+    this.execFilter = '';
+    this.modelFilter = '';
+    if (this.searchInput) this.searchInput.nativeElement.value = '';
+    this.updateFilter();
+  }
 
   constructor(private api: ApiService, private dialog: MatDialog,
               private snack: MatSnackBar, public router: Router,

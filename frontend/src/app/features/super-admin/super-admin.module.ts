@@ -18,20 +18,27 @@ import { MatSelectModule }       from '@angular/material/select';
 import { AuthGuard }             from '../../core/guards/auth.guard';
 import { SuperAdminComponent }   from './super-admin.component';
 import { SuperAdminReportsComponent } from './reports/super-admin-reports.component';
+import { AuditLogsComponent }      from './audit-logs/audit-logs.component';
 import { BaseChartDirective }    from 'ng2-charts';
+import { MatProgressBarModule }  from '@angular/material/progress-bar';
+import { MatPaginatorModule }    from '@angular/material/paginator';
+import { MatDatepickerModule }   from '@angular/material/datepicker';
+import { MatNativeDateModule }   from '@angular/material/core';
 
 @NgModule({
-  declarations: [SuperAdminComponent, SuperAdminReportsComponent],
+  declarations: [SuperAdminComponent, SuperAdminReportsComponent, AuditLogsComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild([
       { path: '', component: SuperAdminComponent, canActivate: [AuthGuard] },
-      { path: 'reports', component: SuperAdminReportsComponent, canActivate: [AuthGuard] }
+      { path: 'reports', component: SuperAdminReportsComponent, canActivate: [AuthGuard] },
+      { path: 'audit-logs', component: AuditLogsComponent, canActivate: [AuthGuard] }
     ]),
     MatButtonModule, MatIconModule, MatChipsModule, MatDialogModule,
     MatFormFieldModule, MatInputModule, MatSnackBarModule, MatCardModule,
     MatProgressSpinnerModule, MatTabsModule, MatTooltipModule, MatTableModule,
-    MatSelectModule,
+    MatSelectModule, MatProgressBarModule, MatPaginatorModule, MatDatepickerModule,
+    MatNativeDateModule,
     BaseChartDirective
   ]
 })

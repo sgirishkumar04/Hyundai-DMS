@@ -1,0 +1,190 @@
+<div class="audit-logs-container">
+  <div class="header-section">
+    <div class="title-group">
+      <h1>Audit & Activity Logs</h1>
+      <p class="subtitle">Track all data mutations and employee actions across the network</p>
+    </div>
+    
+    <div class="actions-group">
+      <button mat-stroked-button (click)="resetFilters()">
+        <mat-icon>refresh</mat-icon> Reset
+      </button>
+      <button mat-flat-button color="primary" (click)="applyFilters()">
+        <mat-icon>refresh</mat-icon> Refresh Logs
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="filter-card shadow-sm mb-4">
+    <div class="filter-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Dealer</mat-label>
+        <mat-select [(ngModel)]="filters.dealerId" (selectionChange)="applyFilters()">
+          <mat-option value="">All Dealers</mat-option>
+          <mat-option *ngFor="let d of dealers" [value]="d.id">{{d.name}}</mat-option>
+        </mat-select>
+        <mat-icon matPrefix>business</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Entity Type</mat-label>
+        <mat-select [(ngModel)]="filters.entityName" (selectionChange)="applyFilters()">
+          <mat-option value="">All Entities</mat-option>
+          <mat-option *ngFor="let e of entities" [value]="e">{{e}}</mat-option>
+        </mat-select>
+        <mat-icon matPrefix>category</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Action</mat-label>
+        <mat-select [(ngModel)]="filters.action" (selectionChange)="applyFilters()">
+          <mat-option value="">All Actions</mat-option>
+          <mat-option *ngFor="let a of actions" [value]="a">{{a}}</mat-option>
+        </mat-select>
+        <mat-icon matPrefix>bolt</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" [(ngModel)]="filters.startDate" (dateChange)="applyFilters()">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" [(ngModel)]="filters.endDate" (dateChange)="applyFilters()">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <div class="table-container shadow-sm border rounded">
+    <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+    <table mat-table [dataSource]="logs" multiTemplateDataRows class="audit-table">
+      
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef> ID </th>
+        <td mat-cell *matCellDef="let log"> #{{log.id}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="userName">
+        <th mat-header-cell *matHeaderCellDef> Performed By </th>
+        <td mat-cell *matCellDef="let log">
+          <div class="user-cell">
+            <mat-icon class="user-icon">account_circle</mat-icon>
+            <span>{{log.userName}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="entityName">
+        <th mat-header-cell *matHeaderCellDef> Entity </th>
+        <td mat-cell *matCellDef="let log">
+          <mat-chip-listbox>
+            <mat-chip>{{log.entityName}}</mat-chip>
+          </mat-chip-listbox>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="entityId">
+        <th mat-header-cell *matHeaderCellDef> Entity ID </th>
+        <td mat-cell *matCellDef="let log"> {{log.entityId}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef> Action </th>
+        <td mat-cell *matCellDef="let log">
+          <span class="action-badge" [ngClass]="log.action.toLowerCase()">
+            {{log.action}}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef> Timestamp </th>
+        <td mat-cell *matCellDef="let log"> {{log.createdAt | date:'medium'}} </td>
+      </ng-container>
+
+      <!-- Expand Column -->
+      <ng-container matColumnDef="expand">
+        <th mat-header-cell *matHeaderCellDef aria-label="row actions">&nbsp;</th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-icon-button aria-label="expand row" (click)="(expandedElement = expandedElement === element ? null : element); $event.stopPropagation()">
+            <mat-icon *ngIf="expandedElement !== element">keyboard_arrow_down</mat-icon>
+            <mat-icon *ngIf="expandedElement === element">keyboard_arrow_up</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <!-- Expanded Content Column -->
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumns.length">
+          <div class="element-detail" [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
+            <div class="detail-container">
+              
+              <!-- Case 1: UPDATE -->
+              <div *ngIf="element.action === 'UPDATE'">
+                <div class="detail-header">
+                  <h3><mat-icon>edit_note</mat-icon> Modifications Detected</h3>
+                  <span class="text-muted">Changes for {{element.entityName}} #{{element.entityId}}</span>
+                </div>
+                
+                <div class="diff-grid mt-3">
+                  <div class="diff-item header">
+                    <span class="field">Field</span>
+                    <span class="old">Prior State</span>
+                    <span class="spacer"></span>
+                    <span class="new">Updated State</span>
+                  </div>
+                  <div class="diff-item" *ngFor="let change of getDiff(element.oldValue, element.newValue)">
+                    <span class="field">{{change.field}}</span>
+                    <span class="old">{{change.old}}</span>
+                    <span class="spacer"><mat-icon>trending_flat</mat-icon></span>
+                    <span class="new">{{change.new}}</span>
+                  </div>
+                  <div class="no-changes" *ngIf="getDiff(element.oldValue, element.newValue).length === 0">
+                    <mat-icon>info</mat-icon> No property-level changes were captured.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Case 2: CREATE / DELETE (Snapshot) -->
+              <div *ngIf="element.action !== 'UPDATE'">
+                <div class="detail-header">
+                  <h3 [class.text-danger]="element.action === 'DELETE'">
+                    <mat-icon>{{element.action === 'CREATE' ? 'add_circle' : 'delete_sweep'}}</mat-icon>
+                    Record {{element.action === 'CREATE' ? 'Creation' : 'Deletion'}} Details
+                  </h3>
+                  <span class="text-muted">Full state capture for {{element.entityName}} #{{element.entityId}}</span>
+                </div>
+
+                <div class="snapshot-grid mt-3">
+                  <div class="snapshot-item" *ngFor="let item of getSnapshot(element.action === 'CREATE' ? element.newValue : element.oldValue)">
+                    <span class="s-label">{{item.field}}</span>
+                    <span class="s-value">{{item.value}}</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let element; columns: displayedColumns;" class="element-row" [class.expanded-row]="expandedElement === element" (click)="expandedElement = expandedElement === element ? null : element"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell text-center p-5" [attr.colspan]="displayedColumns.length">
+          <mat-icon class="large-icon text-muted d-block mx-auto mb-2">find_in_page</mat-icon>
+          No audit logs found matching your filters
+        </td>
+      </tr>
+    </table>
+
+    <mat-paginator [length]="totalElements" [pageSize]="filters.size" [pageSizeOptions]="[10, 20, 50, 100]" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
+  </div>
+</div>

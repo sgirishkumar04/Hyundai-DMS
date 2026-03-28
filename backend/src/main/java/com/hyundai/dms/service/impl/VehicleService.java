@@ -3,12 +3,17 @@ package com.hyundai.dms.service.impl;
 import com.hyundai.dms.dto.request.VehicleRequest;
 import com.hyundai.dms.dto.response.VehicleDetailsDTO;
 import com.hyundai.dms.entity.*;
+import com.hyundai.dms.entity.QVehicle;
 import com.hyundai.dms.exception.ResourceNotFoundException;
 import com.hyundai.dms.repository.*;
+import com.hyundai.dms.service.AuditService;
+import com.querydsl.core.BooleanBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 
@@ -18,15 +23,23 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepo;
     private final BookingRepository bookingRepo;
+    private final AuditService auditService;
+    private final ObjectMapper objectMapper;
+    private final JdbcTemplate jdbc;
 
     public Page<Vehicle> getAll(String status, Long modelId, Pageable pageable) {
-        if (status != null) {
-            return vehicleRepo.findByStatus(Vehicle.VehicleStatus.valueOf(status), pageable);
+        QVehicle v = QVehicle.vehicle;
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (status != null && !status.trim().isEmpty()) {
+            builder.and(v.status.eq(Vehicle.VehicleStatus.valueOf(status)));
         }
+        
         if (modelId != null) {
-            return vehicleRepo.findAvailableByModel(modelId, pageable);
+            builder.and(v.variant.model.id.eq(modelId));
         }
-        return vehicleRepo.findAll(pageable);
+
+        return vehicleRepo.findAll(builder, pageable);
     }
 
     public Vehicle getById(Long id) {
@@ -92,12 +105,21 @@ public class VehicleService {
             .dealerCost(req.getDealerCost())
             .dealer(Dealer.builder().id(com.hyundai.dms.security.DealerContext.getCurrentDealerId()).build())
             .build();
-        return vehicleRepo.save(v);
+        Vehicle savedVehicle = vehicleRepo.save(v);
+        auditService.log("Vehicle", savedVehicle.getId(), "CREATE", null, savedVehicle);
+        return savedVehicle;
     }
 
     @Transactional
     public Vehicle update(Long id, VehicleRequest req) {
         Vehicle v = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(v);
+        } catch (Exception e) {
+            // Log and continue
+        }
+
         v.setVin(req.getVin());
         v.setEngineNumber(req.getEngineNumber());
         v.setChassisNumber(req.getChassisNumber());
@@ -110,12 +132,27 @@ public class VehicleService {
         v.setStatus(Vehicle.VehicleStatus.valueOf(req.getStatus()));
         v.setDealerCost(req.getDealerCost());
         v.setInvoiceDate(req.getInvoiceDate());
-        return vehicleRepo.save(v);
+        
+        Vehicle savedVehicle = vehicleRepo.save(v);
+        auditService.log("Vehicle", savedVehicle.getId(), "UPDATE", oldJson, savedVehicle);
+        return savedVehicle;
     }
 
     @Transactional
     public void delete(Long id) {
+        Vehicle v = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(v);
+        } catch (Exception e) {}
+
+        // 1. Un-allocate from bookings (set vehicle_id to NULL)
+        jdbc.update("UPDATE bookings SET vehicle_id = NULL, status = 'BOOKED' WHERE vehicle_id = ?", id);
+        
+        // 2. Delete the vehicle
         vehicleRepo.deleteById(id);
+        
+        auditService.log("Vehicle", id, "DELETE", oldJson, null);
     }
 
     public List<Object[]> getInventorySummary() {

@@ -104,7 +104,10 @@ import { Role, Department } from '../../../core/models/models';
                 <mat-label>Temporary Password</mat-label>
                 <input matInput formControlName="password" type="password" [required]="!isEdit">
                 <mat-icon matSuffix>lock</mat-icon>
-                <mat-hint>Provide a temporary password for the employee's first login.</mat-hint>
+                <mat-hint>At least 8 chars, 1 uppercase, 1 special character.</mat-hint>
+                <mat-error *ngIf="form.get('password')?.hasError('pattern')">
+                  Password does not meet complexity requirements.
+                </mat-error>
               </mat-form-field>
             </mat-card-content>
           </mat-card>
@@ -172,11 +175,12 @@ export class EmployeeFormComponent implements OnInit {
     this.api.getRoles().subscribe(r => this.roles = r);
     this.api.getDepartments().subscribe(d => this.departments = d);
     
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEdit = true;
       this.empId = +id;
-      this.form.get('password')?.clearValidators();
+      this.form.get('password')?.setValidators([Validators.minLength(8), Validators.pattern(passwordRegex)]);
       this.api.getEmployee(this.empId).subscribe(e => {
         this.form.patchValue({
           employeeCode: e.employeeCode,
@@ -190,7 +194,7 @@ export class EmployeeFormComponent implements OnInit {
         });
       });
     } else {
-      this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
+      this.form.get('password')?.setValidators([Validators.required, Validators.minLength(8), Validators.pattern(passwordRegex)]);
     }
   }
 

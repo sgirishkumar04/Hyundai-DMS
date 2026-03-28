@@ -17,8 +17,7 @@ export class ErrorInterceptor implements HttpInterceptor {
             this.auth.logout();
           }
         }
-        
-        // Pass the full error response down so components can extract specific validation errors
+        // Pass the full error down so components can handle it
         return throwError(() => error);
       })
     );

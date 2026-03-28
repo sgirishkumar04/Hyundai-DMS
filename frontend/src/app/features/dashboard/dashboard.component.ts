@@ -121,21 +121,23 @@ import { ChartData, ChartOptions } from 'chart.js';
           </div>
         </div>
 
-        <!-- Quick Links -->
+        <!-- Quick Actions -->
         <div class="card">
           <div class="card-header">
             <h3><mat-icon>bolt</mat-icon>Quick Actions</h3>
           </div>
           <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <a *ngFor="let qa of quickActions"
-               [routerLink]="qa.route"
-               class="quick-action-tile"
-               [style.--qa-bg]="qa.bg"
-               [style.--qa-border]="qa.color"
-               style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border-radius:10px;background:var(--bg-page);border:1px solid var(--border);text-decoration:none;transition:all .2s;cursor:pointer">
-              <mat-icon [style.color]="qa.color" style="font-size:24px;width:24px;height:24px">{{qa.icon}}</mat-icon>
-              <span style="font-size:.75rem;font-weight:600;color:var(--text-primary);text-align:center">{{qa.label}}</span>
-            </a>
+            <ng-container *ngFor="let qa of quickActions">
+              <a *ngIf="!qa.permission || auth.hasPermission(qa.permission)"
+                 [routerLink]="qa.route"
+                 class="quick-action-tile"
+                 [style.--qa-bg]="qa.bg"
+                 [style.--qa-border]="qa.color"
+                 style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border-radius:10px;background:var(--bg-page);border:1px solid var(--border);text-decoration:none;transition:all .2s;cursor:pointer">
+                <mat-icon [style.color]="qa.color" style="font-size:24px;width:24px;height:24px">{{qa.icon}}</mat-icon>
+                <span style="font-size:.75rem;font-weight:600;color:var(--text-primary);text-align:center">{{qa.label}}</span>
+              </a>
+            </ng-container>
           </div>
         </div>
       </div>
@@ -173,12 +175,12 @@ export class DashboardComponent implements OnInit {
   };
 
   quickActions = [
-    { label: 'Add Vehicle',  icon: 'add_circle',  route: '/inventory',  color: '#002c5f', bg: '#e8edf5' },
-    { label: 'Add Customer', icon: 'person_add',  route: '/customers',  color: '#0e7490', bg: '#cffafe' },
-    { label: 'New Lead',     icon: 'trending_up', route: '/leads',      color: '#1b8a4a', bg: '#dcfce7' },
-    { label: 'New Service',  icon: 'build',       route: '/service',    color: '#e6870a', bg: '#ffedd5' },
-    { label: 'View Reports', icon: 'bar_chart',   route: '/reports',    color: '#6a1b9a', bg: '#f3e8ff' },
-    { label: 'Employees',    icon: 'badge',       route: '/employees',  color: '#b91c1c', bg: '#fee2e2' },
+    { label: 'Add Vehicle',  icon: 'add_circle',  route: '/inventory/new', color: '#002c5f', bg: '#e8edf5', permission: 'INVENTORY_CREATE' },
+    { label: 'Add Customer', icon: 'person_add',  route: '/customers/new', color: '#0e7490', bg: '#cffafe', permission: 'SALES_CREATE' },
+    { label: 'New Lead',     icon: 'trending_up', route: '/leads/new',     color: '#1b8a4a', bg: '#dcfce7', permission: 'SALES_CREATE' },
+    { label: 'New Service',  icon: 'build',       route: '/service/add',   color: '#e6870a', bg: '#ffedd5', permission: 'SERVICE_CREATE' },
+    { label: 'View Reports', icon: 'bar_chart',   route: '/reports',       color: '#6a1b9a', bg: '#f3e8ff', permission: 'REPORTS_VIEW' },
+    { label: 'Employees',    icon: 'badge',       route: '/employees/add', color: '#b91c1c', bg: '#fee2e2', permission: 'EMPLOYEES_VIEW' },
   ];
 
   constructor(private api: ApiService, public auth: AuthService) {}

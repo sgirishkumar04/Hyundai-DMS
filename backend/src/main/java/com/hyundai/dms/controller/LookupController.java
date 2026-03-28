@@ -1,11 +1,13 @@
 package com.hyundai.dms.controller;
 
+import com.hyundai.dms.service.impl.LookupService;
 import com.hyundai.dms.entity.*;
-import com.hyundai.dms.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provides all dropdown / lookup data for the Angular frontend.
@@ -16,28 +18,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LookupController {
 
-    private final RoleRepository roleRepo;
-    private final DepartmentRepository deptRepo;
-    private final VehicleModelRepository modelRepo;
-    private final VehicleVariantRepository variantRepo;
-    private final ColorRepository colorRepo;
-    private final EngineTypeRepository engineTypeRepo;
-    private final InventoryLocationRepository locationRepo;
-    private final LeadSourceRepository leadSourceRepo;
-    private final SupplierRepository supplierRepo;
-    private final BankRepository bankRepo;
+    private final LookupService lookupService;
 
-    @GetMapping("/roles")          public ResponseEntity<List<Role>>              roles()       { return ResponseEntity.ok(roleRepo.findAll()); }
-    @GetMapping("/departments")    public ResponseEntity<List<Department>>         departments() { return ResponseEntity.ok(deptRepo.findAll()); }
-    @GetMapping("/vehicle-models") public ResponseEntity<List<VehicleModel>>       models()      { return ResponseEntity.ok(modelRepo.findAll()); }
-    @GetMapping("/vehicle-variants") public ResponseEntity<List<VehicleVariant>>   variants()    { return ResponseEntity.ok(variantRepo.findAll()); }
-    @GetMapping("/vehicle-variants/{modelId}") public ResponseEntity<List<VehicleVariant>> variantsByModel(@PathVariable Long modelId) {
-        return ResponseEntity.ok(variantRepo.findByModelId(modelId));
+    private <T> ResponseEntity<List<T>> cached(List<T> data) {
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).cachePublic())
+            .body(data);
     }
-    @GetMapping("/colors")         public ResponseEntity<List<Color>>             colors()      { return ResponseEntity.ok(colorRepo.findAll()); }
-    @GetMapping("/engine-types")   public ResponseEntity<List<EngineType>>        engineTypes() { return ResponseEntity.ok(engineTypeRepo.findAll()); }
-    @GetMapping("/locations")      public ResponseEntity<List<InventoryLocation>>  locations()   { return ResponseEntity.ok(locationRepo.findAll()); }
-    @GetMapping("/lead-sources")   public ResponseEntity<List<LeadSource>>        leadSources() { return ResponseEntity.ok(leadSourceRepo.findAll()); }
-    @GetMapping("/suppliers")      public ResponseEntity<List<Supplier>>          suppliers()   { return ResponseEntity.ok(supplierRepo.findAll()); }
-    @GetMapping("/banks")          public ResponseEntity<List<Bank>>              banks()       { return ResponseEntity.ok(bankRepo.findAll()); }
+
+    @GetMapping("/roles")          public ResponseEntity<List<Role>>              roles()       { 
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noCache())
+            .header("Pragma", "no-cache")
+            .header("Expires", "0")
+            .body(lookupService.getRoles()); 
+    }
+    @GetMapping("/departments")    public ResponseEntity<List<Department>>         departments() { return cached(lookupService.getDepartments()); }
+    @GetMapping("/vehicle-models") public ResponseEntity<List<VehicleModel>>       models()      { return cached(lookupService.getModels()); }
+    @GetMapping("/vehicle-variants") public ResponseEntity<List<VehicleVariant>>   variants()    { return cached(lookupService.getVariants()); }
+    @GetMapping("/vehicle-variants/{modelId}") public ResponseEntity<List<VehicleVariant>> variantsByModel(@PathVariable Long modelId) {
+        return cached(lookupService.getVariantsByModel(modelId));
+    }
+    @GetMapping("/colors")         public ResponseEntity<List<Color>>             colors()      { return cached(lookupService.getColors()); }
+    @GetMapping("/engine-types")   public ResponseEntity<List<EngineType>>        engineTypes() { return cached(lookupService.getEngineTypes()); }
+    @GetMapping("/locations")      public ResponseEntity<List<InventoryLocation>>  locations()   { return cached(lookupService.getLocations()); }
+    @GetMapping("/lead-sources")   public ResponseEntity<List<LeadSource>>        leadSources() { return cached(lookupService.getLeadSources()); }
+    @GetMapping("/suppliers")      public ResponseEntity<List<Supplier>>          suppliers()   { return cached(lookupService.getSuppliers()); }
+    @GetMapping("/banks")          public ResponseEntity<List<Bank>>              banks()       { return cached(lookupService.getBanks()); }
 }

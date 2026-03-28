@@ -12,6 +12,9 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-employee-list',
   template: `
+    <style>
+      .inactive-row { background-color: rgba(0,0,0,0.02); opacity: 0.75; }
+    </style>
     <div>
       <div class="page-header mb-4">
         <div class="page-title">
@@ -30,8 +33,11 @@ import { AuthService } from '../../../core/services/auth.service';
           <mat-form-field appearance="outline" class="search-field">
             <mat-label>Search employees…</mat-label>
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
-            <input matInput (keyup)="applyFilter($event)" placeholder="Name, email, code…">
+            <input matInput #searchInput (keyup)="applyFilter($event)" placeholder="Name, email, code…">
           </mat-form-field>
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="margin-right: 8px; color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
           <mat-form-field appearance="outline" style="max-width:200px">
             <mat-label>Department</mat-label>
             <mat-select [(value)]="deptFilter" (selectionChange)="applyDeptFilter()">
@@ -96,9 +102,14 @@ import { AuthService } from '../../../core/services/auth.service';
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>Status</th>
             <td mat-cell *matCellDef="let e">
-              <span [class]="'badge ' + (e.isActive ? 'badge-green' : 'badge-red')">
-                {{e.isActive ? 'Active' : 'Inactive'}}
-              </span>
+              <div style="display:flex; flex-direction:column; gap:4px">
+                <span [class]="'badge ' + (e.isActive ? 'badge-green' : 'badge-red')">
+                  {{e.isActive ? 'Active' : 'Inactive'}}
+                </span>
+                <span *ngIf="e.isLocked" class="badge badge-orange" style="font-size:10px; padding:2px 6px">
+                  <mat-icon style="font-size:12px; width:12px; height:12px; vertical-align:middle">lock</mat-icon> Locked
+                </span>
+              </div>
             </td>
           </ng-container>
 
@@ -109,10 +120,13 @@ import { AuthService } from '../../../core/services/auth.service';
                 <button *ngIf="canEdit" mat-icon-button matTooltip="Edit" (click)="router.navigate(['/employees/edit', e.id])">
                   <mat-icon style="font-size:18px;color:var(--hd-blue)">edit</mat-icon>
                 </button>
+                <button *ngIf="canEdit && e.isLocked" mat-icon-button matTooltip="Unlock Account" (click)="unlockAccount(e)">
+                  <mat-icon style="font-size:18px;color:#e6870a">lock_open</mat-icon>
+                </button>
                 <button *ngIf="canEdit && canDeactivate(e)" mat-icon-button [matTooltip]="e.isActive ? 'Deactivate' : 'Activate'"
                         (click)="toggleActive(e)">
-                  <mat-icon style="font-size:18px" [style.color]="e.isActive ? '#e6870a' : '#1b8a4a'">
-                    {{e.isActive ? 'person_off' : 'how_to_reg'}}
+                  <mat-icon style="font-size:18px" [style.color]="e.isActive ? '#64748b' : '#1b8a4a'">
+                    {{e.isActive ? 'person_off' : 'person_add'}}
                   </mat-icon>
                 </button>
               </div>
@@ -120,7 +134,7 @@ import { AuthService } from '../../../core/services/auth.service';
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
-          <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns;" [class.inactive-row]="!row.isActive"></tr>
           <tr class="mat-mdc-no-data-row" *matNoDataRow>
             <td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted)">
               <mat-icon>badge</mat-icon><br>No employees found
@@ -135,13 +149,34 @@ import { AuthService } from '../../../core/services/auth.service';
 export class EmployeeListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('searchInput') searchInput!: any;
+
+  unlockAccount(e: any) {
+    this.api.unlockEmployee(e.id).subscribe({
+      next: () => {
+        this.snack.open('Account unlocked successfully', 'Close', { duration: 3000 });
+        this.load();
+      },
+      error: (err) => {
+        this.snack.open(err.error?.message || 'Unlock failed', 'Close', { duration: 3000 });
+      }
+    });
+  }
 
   columns = ['code','name','department','role','phone','joined','status','actions'];
   dataSource = new MatTableDataSource<any>([]);
   loading = false;
+  searchText = '';
   deptFilter = '';
   departments: string[] = [];
   private palette = ['#002c5f','#0e7490','#1b8a4a','#6a1b9a','#c2410c','#e6870a'];
+
+  resetFilters() {
+    this.searchText = '';
+    this.deptFilter = '';
+    if (this.searchInput) this.searchInput.nativeElement.value = '';
+    this.updateFilter();
+  }
 
   constructor(private api: ApiService, private dialog: MatDialog,
               private snack: MatSnackBar, public router: Router,
@@ -160,7 +195,25 @@ export class EmployeeListComponent implements OnInit {
     return this.canEdit || this.canDelete;
   }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.dataSource.filterPredicate = (row: any, filterValue: string) => {
+      let f: any;
+      try { f = JSON.parse(filterValue); } catch(e) { return true; }
+      
+      const text = f.text?.toLowerCase() || '';
+      const matchSearch = !text || [
+        row.employeeCode,
+        row.firstName,
+        row.lastName,
+        row.email,
+        row.phone
+      ].join(' ').toLowerCase().includes(text);
+      
+      const matchDept = !f.dept || row.department?.name === f.dept;
+      return matchSearch && matchDept;
+    };
+    this.load();
+  }
 
   load() {
     this.loading = true;
@@ -185,12 +238,19 @@ export class EmployeeListComponent implements OnInit {
   }
 
   applyFilter(e: Event) {
-    this.dataSource.filter = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    this.searchText = (e.target as HTMLInputElement).value;
+    this.updateFilter();
   }
 
   applyDeptFilter() {
-    this.dataSource.filterPredicate = (row: any, f: string) => !f || row.department?.name === f;
-    this.dataSource.filter = this.deptFilter;
+    this.updateFilter();
+  }
+
+  updateFilter() {
+    this.dataSource.filter = JSON.stringify({
+      text: this.searchText,
+      dept: this.deptFilter
+    });
   }
 
   avatarColor(name: string): string {

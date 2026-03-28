@@ -1,11 +1,12 @@
 package com.hyundai.dms.service.impl;
 
 import com.hyundai.dms.security.DealerContext;
-
 import com.hyundai.dms.dto.request.LeadRequest;
 import com.hyundai.dms.entity.*;
 import com.hyundai.dms.exception.ResourceNotFoundException;
 import com.hyundai.dms.repository.*;
+import com.hyundai.dms.service.AuditService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,8 @@ public class LeadService {
     private final BookingRepository bookingRepo;
     private final DealerRepository dealerRepo;
     private final JdbcTemplate jdbc;
+    private final AuditService auditService;
+    private final ObjectMapper objectMapper;
 
     public Page<Lead> getAll(String status, Long execId, Pageable pageable) {
         Long dealerId = DealerContext.getCurrentDealerId();
@@ -88,6 +91,7 @@ public class LeadService {
         if (req.getPreferredColorId() != null)
             lead.setPreferredColor(Color.builder().id(req.getPreferredColorId()).build());
         Lead savedLead = leadRepo.save(lead);
+        auditService.log("Lead", savedLead.getId(), "CREATE", null, savedLead);
         checkAndCreateBooking(savedLead);
         return savedLead;
     }
@@ -95,6 +99,13 @@ public class LeadService {
     @Transactional
     public Lead update(Long id, LeadRequest req) {
         Lead lead = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(lead);
+        } catch (Exception e) {
+            // Log and continue, ideally it shouldn't fail
+        }
+        
         if (req.getCustomerId() != null) lead.setCustomer(Customer.builder().id(req.getCustomerId()).build());
         if (req.getSourceId() != null) lead.setSource(LeadSource.builder().id(req.getSourceId()).build());
         lead.setAssignedTo(Employee.builder().id(req.getAssignedTo()).build());
@@ -107,6 +118,7 @@ public class LeadService {
         lead.setPreferredColor(req.getPreferredColorId() != null ? Color.builder().id(req.getPreferredColorId()).build() : null);
 
         Lead savedLead = leadRepo.save(lead);
+        auditService.log("Lead", savedLead.getId(), "UPDATE", oldJson, savedLead);
         checkAndCreateBooking(savedLead);
         return savedLead;
     }
@@ -140,6 +152,12 @@ public class LeadService {
 
     @Transactional
     public void delete(Long id) {
+        Lead lead = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(lead);
+        } catch (Exception e) {}
+
         // 1. Find all bookings associated with this lead
         List<Long> bIds = jdbc.queryForList("SELECT id FROM bookings WHERE lead_id = ?", Long.class, id);
         
@@ -147,7 +165,6 @@ public class LeadService {
             // 2. Delete dependent records of bookings
             jdbc.update("DELETE FROM finance_loans WHERE booking_id = ?", bId);
             jdbc.update("DELETE FROM invoices WHERE booking_id = ?", bId);
-            // Add other booking-dependent tables here if they exist in schema
         }
         
         // 3. Delete bookings
@@ -155,6 +172,7 @@ public class LeadService {
         
         // 4. Finally delete the lead
         leadRepo.deleteById(id);
+        auditService.log("Lead", id, "DELETE", oldJson, null);
     }
 
     public String generateNextLeadNumber() {

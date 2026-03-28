@@ -34,8 +34,12 @@ import { AuthService } from '../../../core/services/auth.service';
           <mat-form-field appearance="outline" class="search-field">
             <mat-label>Search vehicles…</mat-label>
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
-            <input matInput (keyup)="applyFilter($event)" placeholder="VIN, model, variant…">
+            <input matInput #searchInput (keyup)="applyFilter($event)" placeholder="VIN, model, variant…">
           </mat-form-field>
+          
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="margin-right: 8px; color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
 
           <mat-form-field appearance="outline" style="max-width:180px">
             <mat-label>Status</mat-label>
@@ -205,6 +209,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class VehicleListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('searchInput') searchInput!: any;
 
   columns = ['vin','model','color','year','status','aging','location','price','actions'];
   dataSource = new MatTableDataSource<any>([]);
@@ -217,6 +222,19 @@ export class VehicleListComponent implements OnInit {
   locationFilter = '';
   minPriceFilter: number | null = null;
   maxPriceFilter: number | null = null;
+
+  resetFilters() {
+    this.searchText = '';
+    this.statusFilter = '';
+    this.colorFilter = '';
+    this.yearFilter = '';
+    this.agingFilter = '';
+    this.locationFilter = '';
+    this.minPriceFilter = null;
+    this.maxPriceFilter = null;
+    if (this.searchInput) this.searchInput.nativeElement.value = '';
+    this.updateFilter();
+  }
 
   get uniqueColors() { return [...new Set(this.dataSource.data.map((v: any) => v.color?.name).filter(Boolean))].sort(); }
   get uniqueYears() { return [...new Set(this.dataSource.data.map((v: any) => v.mfgYear).filter(Boolean))].sort(); }

@@ -9,6 +9,8 @@ import com.hyundai.dms.entity.Customer;
 import com.hyundai.dms.entity.CustomerAddress;
 import com.hyundai.dms.exception.ResourceNotFoundException;
 import com.hyundai.dms.repository.CustomerRepository;
+import com.hyundai.dms.service.AuditService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,17 @@ public class CustomerService {
 
     private final CustomerRepository customerRepo;
     private final DealerRepository dealerRepo;
+    private final AuditService auditService;
+    private final ObjectMapper objectMapper;
+
+    private <T extends Enum<T>> T safeValueOf(Class<T> enumType, String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try {
+            return Enum.valueOf(enumType, value.toUpperCase());
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     public Page<Customer> getAll(String search, Pageable pageable) {
         Long dealerId = DealerContext.getCurrentDealerId();
@@ -44,6 +57,7 @@ public class CustomerService {
 
         if (customerRepo.existsByCustomerCodeAndDealerId(req.getCustomerCode(), dealerId))
             throw new IllegalArgumentException("Customer code already exists for this dealer");
+            
         Customer c = Customer.builder()
             .customerCode(req.getCustomerCode())
             .firstName(req.getFirstName())
@@ -52,10 +66,9 @@ public class CustomerService {
             .phone(req.getPhone())
             .alternatePhone(req.getAlternatePhone())
             .dateOfBirth(req.getDateOfBirth())
-            .gender(req.getGender() != null ? Customer.Gender.valueOf(req.getGender()) : null)
+            .gender(safeValueOf(Customer.Gender.class, req.getGender()))
             .panNumber(req.getPanNumber())
-            .customerType(req.getCustomerType() != null
-                ? Customer.CustomerType.valueOf(req.getCustomerType()) : Customer.CustomerType.INDIVIDUAL)
+            .customerType(safeValueOf(Customer.CustomerType.class, req.getCustomerType()))
             .companyName(req.getCompanyName())
             .gstNumber(req.getGstNumber())
             .dealer(dealer)
@@ -65,7 +78,7 @@ public class CustomerService {
             List<CustomerAddress> addresses = req.getAddresses().stream()
                 .map(a -> CustomerAddress.builder()
                     .customer(c)
-                    .type(a.getType() != null ? CustomerAddress.AddressType.valueOf(a.getType()) : CustomerAddress.AddressType.HOME)
+                    .type(safeValueOf(CustomerAddress.AddressType.class, a.getType()))
                     .line1(a.getLine1())
                     .line2(a.getLine2())
                     .city(a.getCity())
@@ -77,22 +90,28 @@ public class CustomerService {
             c.setAddresses(addresses);
         }
 
-        return customerRepo.save(c);
+        Customer saved = customerRepo.save(c);
+        auditService.log("Customer", saved.getId(), "CREATE", null, saved);
+        return saved;
     }
 
     @Transactional
     public Customer update(Long id, CustomerRequest req) {
         Customer c = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(c);
+        } catch (Exception e) {}
+
         c.setFirstName(req.getFirstName());
         c.setLastName(req.getLastName());
         c.setEmail(req.getEmail());
         c.setPhone(req.getPhone());
         c.setAlternatePhone(req.getAlternatePhone());
         c.setDateOfBirth(req.getDateOfBirth());
-        c.setGender(req.getGender() != null ? Customer.Gender.valueOf(req.getGender()) : null);
+        c.setGender(safeValueOf(Customer.Gender.class, req.getGender()));
         c.setPanNumber(req.getPanNumber());
-        c.setCustomerType(req.getCustomerType() != null
-                ? Customer.CustomerType.valueOf(req.getCustomerType()) : Customer.CustomerType.INDIVIDUAL);
+        c.setCustomerType(safeValueOf(Customer.CustomerType.class, req.getCustomerType()));
         c.setCompanyName(req.getCompanyName());
         c.setGstNumber(req.getGstNumber());
         
@@ -101,7 +120,7 @@ public class CustomerService {
             List<CustomerAddress> newAddresses = req.getAddresses().stream()
                 .map(a -> CustomerAddress.builder()
                     .customer(c)
-                    .type(a.getType() != null ? CustomerAddress.AddressType.valueOf(a.getType()) : CustomerAddress.AddressType.HOME)
+                    .type(safeValueOf(CustomerAddress.AddressType.class, a.getType()))
                     .line1(a.getLine1())
                     .line2(a.getLine2())
                     .city(a.getCity())
@@ -113,12 +132,21 @@ public class CustomerService {
             c.getAddresses().addAll(newAddresses);
         }
         
-        return customerRepo.save(c);
+        Customer saved = customerRepo.save(c);
+        auditService.log("Customer", saved.getId(), "UPDATE", oldJson, saved);
+        return saved;
     }
 
     @Transactional
     public void delete(Long id) {
-        customerRepo.deleteById(id);
+        Customer c = getById(id);
+        String oldJson = null;
+        try {
+            oldJson = objectMapper.writeValueAsString(c);
+        } catch (Exception e) {}
+
+        customerRepo.delete(c);
+        auditService.log("Customer", id, "DELETE", oldJson, null);
     }
 
     public String generateNextCode() {

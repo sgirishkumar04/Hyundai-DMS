@@ -57,4 +57,11 @@ public class EmployeeController {
         employeeService.deactivate(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/unlock")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> unlock(@PathVariable Long id) {
+        employeeService.unlock(id);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -5,6 +5,7 @@ import com.hyundai.dms.entity.Role;
 import com.hyundai.dms.repository.PermissionRepository;
 import com.hyundai.dms.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ public class RoleController {
      */
     @PutMapping("/{id}/permissions")
     @PreAuthorize("hasAuthority('EMPLOYEES_EDIT')")
+    @CacheEvict(cacheNames = "lookups", allEntries = true)
     public ResponseEntity<Role> updateRolePermissions(
             @PathVariable Long id,
             @RequestBody List<Long> permissionIds) {

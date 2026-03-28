@@ -30,8 +30,11 @@ import { AuthService } from '../../../core/services/auth.service';
           <mat-form-field appearance="outline" class="search-field">
             <mat-label>Search customers…</mat-label>
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
-            <input matInput (keyup)="applyFilter($event)" placeholder="Name, email, phone…">
+            <input matInput #searchInput (keyup)="applyFilter($event)" placeholder="Name, email, phone…">
           </mat-form-field>
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="margin-right: 8px; color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
           <mat-form-field appearance="outline" style="max-width:180px">
             <mat-label>Type</mat-label>
             <mat-select [(value)]="typeFilter" (selectionChange)="applyTypeFilter()">
@@ -127,12 +130,20 @@ import { AuthService } from '../../../core/services/auth.service';
 export class CustomerListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('searchInput') searchInput!: any;
 
   columns = ['code','name','phone','type','gender','city','actions'];
   dataSource = new MatTableDataSource<any>([]);
   loading = false;
   searchText = '';
   typeFilter = '';
+
+  resetFilters() {
+    this.searchText = '';
+    this.typeFilter = '';
+    if (this.searchInput) this.searchInput.nativeElement.value = '';
+    this.updateFilter();
+  }
 
   private colors = ['#002c5f','#0e7490','#1b8a4a','#6a1b9a','#c2410c','#b91c1c'];
 

@@ -44,6 +44,10 @@ import { Router } from '@angular/router';
             <mat-icon matPrefix style="color:var(--text-muted)">search</mat-icon>
             <input matInput [(ngModel)]="searchQuery" (keyup)="applyFilters()" placeholder="Lead no, customer, model…">
           </mat-form-field>
+          
+          <button mat-icon-button (click)="resetFilters()" matTooltip="Reset Filters" style="margin-right: 8px; color: var(--text-muted)">
+            <mat-icon>refresh</mat-icon>
+          </button>
 
           <mat-form-field appearance="outline" style="max-width:180px">
             <mat-label>Stage</mat-label>
@@ -201,6 +205,13 @@ export class LeadListComponent implements OnInit {
       return matchStage && matchModel && matchSearch;
     };
     this.dataSource.filter = JSON.stringify({ stage: this.stageFilter, model: this.modelFilter, search: this.searchQuery });
+  }
+
+  resetFilters() {
+    this.stageFilter = '';
+    this.modelFilter = '';
+    this.searchQuery = '';
+    this.applyFilters();
   }
 
   filterByStage(stage: string) {
