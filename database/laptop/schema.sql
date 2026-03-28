@@ -341,11 +341,18 @@ CREATE TABLE service_appointments (
     appointment_no   VARCHAR(20) NOT NULL UNIQUE,
     customer_id      BIGINT NOT NULL,
     vehicle_reg_no   VARCHAR(20) NOT NULL,
+    vehicle_variant_id BIGINT,
     dealer_id        BIGINT NOT NULL,
     appointed_by     BIGINT NOT NULL,
     appointment_date DATETIME NOT NULL,
+    service_type     ENUM('PERIODIC','REPAIR','ACCIDENTAL','WARRANTY','RECALL','GENERAL_CHECKUP') NOT NULL,
     status           ENUM('SCHEDULED','IN_PROGRESS','COMPLETED','CANCELLED') DEFAULT 'SCHEDULED',
-    CONSTRAINT fk_sa_dealer FOREIGN KEY (dealer_id) REFERENCES dealers(id)
+    remarks          TEXT,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sa_dealer FOREIGN KEY (dealer_id) REFERENCES dealers(id),
+    CONSTRAINT fk_sa_variant FOREIGN KEY (vehicle_variant_id) REFERENCES vehicle_variants(id),
+    INDEX idx_svc_dealer (dealer_id)
 );
 
 CREATE TABLE job_cards (

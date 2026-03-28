@@ -142,9 +142,9 @@ INSERT IGNORE INTO bookings (id, booking_number, lead_id, customer_id, variant_i
 -- ─────────────────────────────────────────────
 
 INSERT IGNORE INTO service_appointments (id, appointment_no, customer_id, vehicle_reg_no, dealer_id, appointed_by, appointment_date, service_type, status) VALUES 
-(1, 'SA26-001', 1, 'TN-01-AX-1011', 1, 5, '2026-03-28 09:00', 'PERIODIC', 'IN_PROGRESS'),
-(2, 'SA26-002', 2, 'TN-01-BY-2022', 1, 5, '2026-03-28 11:00', 'REPAIR', 'SCHEDULED'),
-(3, 'SA26-003', 4, 'TN-01-CZ-3033', 1, 5, '2026-03-28 14:00', 'PERIODIC', 'SCHEDULED');
+(1, 'SA2026-001', 1, 'TN-01-AX-1011', 1, 5, '2026-03-28 09:00:00', 'PERIODIC', 'IN_PROGRESS'),
+(2, 'SA2026-002', 2, 'TN-01-BY-2022', 1, 5, '2026-03-28 11:00:00', 'REPAIR', 'SCHEDULED'),
+(3, 'SA2026-003', 4, 'TN-01-CZ-3033', 1, 5, '2026-03-28 14:00:00', 'PERIODIC', 'SCHEDULED');
 
 INSERT IGNORE INTO job_cards (id, job_card_no, appointment_id, mechanic_id, status, created_at) VALUES 
 (1, 'JC26-001', 1, 6, 'IN_PROGRESS', '2026-03-28 09:30');
